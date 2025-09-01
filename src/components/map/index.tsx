@@ -20,7 +20,7 @@ export default function MainMap() {
     const intervalMeters = 1000;
     const coords = routeGeoJSON.features[0].geometry.coordinates;
     const line = turf.lineString(coords);
-    const totalDistance = routeGeoJSON.features[0].properties.segments[0].distance;
+    const totalDistance = routeGeoJSON?.features[0]?.properties?.segments[0].distance;
     const numStops = Math.floor(totalDistance / intervalMeters);
     
     const busStops: [number, number][] = [];

@@ -1,4 +1,6 @@
 import { createContext, useContext, useState } from "react";
+import type { FeatureCollection, LineString, Feature } from "geojson";
+
 import axios from "axios";
 
 interface MapContextType {
@@ -6,15 +8,19 @@ interface MapContextType {
   setUserLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
   anonLocation: [number, number] | null;
   setAnonLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
-  routeGeoJSON: any;
-  setRouteGeoJSON: React.Dispatch<React.SetStateAction<any>>;
   fetchRoute: (start: [number, number], end: [number, number]) => Promise<void>;
+  routeGeoJSON: ORSGeoJSON|null;
+  setRouteGeoJSON: React.Dispatch<React.SetStateAction<null>>;
   mapCenter: mapCenterType;
   setMapCenter: React.Dispatch<React.SetStateAction<mapCenterType>>;
   busData: busDataType[];
   searchBuses: (query: string) => busDataType[];
   selectedBus: busDataType | null;
   setSelectedBus: React.Dispatch<React.SetStateAction<busDataType | null>>;
+}
+
+interface ORSGeoJSON extends FeatureCollection {
+  features: Feature<LineString>[];
 }
 
 type busDataType = {

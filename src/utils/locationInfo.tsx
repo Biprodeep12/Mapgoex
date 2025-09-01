@@ -19,7 +19,7 @@ type locateAdd = {
     lat: string;
     lon: string;
     address: Address;
-}  
+}
 
 export const LocationInfo = () => {
     const { anonLocation, setAnonLocation } = useMapContext();
