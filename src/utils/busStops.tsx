@@ -5,14 +5,16 @@ import { GeocodingResult } from "@/types/bus";
 const geocodingCache = new Map<string, string>();
 
 // Debounce function to limit API calls
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
+  return (...args: Parameters<T>): void => {
     clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
   };
 }
 
@@ -42,9 +44,9 @@ export const busStopsInfo = async (coords: [number, number]): Promise<string> =>
     const res = await axios.get(
       `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=16&addressdetails=1`,
       {
-        timeout: 5000, // 5 second timeout
+        timeout: 5000,
         headers: {
-          'User-Agent': 'MapGoEx/1.0' // Proper user agent
+          'User-Agent': 'MapGoEx/1.0'
         }
       }
     );
