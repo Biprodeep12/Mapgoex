@@ -19,6 +19,7 @@ interface Feature {
 }
 
 type busDataType = {
+  id: string;
   label: string,
   A: [number,number],
   B: [number,number],
@@ -95,6 +96,7 @@ const UserInter = () => {
     if (!searchInput.trim()) return;
     setBusSearchResults([
       {
+        id: 'A15',
         label: 'A15',
         A: [88.377639, 22.465722],
         B: [88.366083, 22.542861],

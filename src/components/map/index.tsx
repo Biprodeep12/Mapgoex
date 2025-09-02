@@ -1,7 +1,7 @@
 import Map, { Marker, NavigationControl, Source, Layer, MapRef } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
 
@@ -33,6 +33,29 @@ export default function MainMap() {
     mapRef.current?.flyTo(mapCenter);
   },[mapCenter])
 
+  // Memoized map style to prevent unnecessary re-renders
+  const mapStyle = useMemo(() => ({
+    version: 8 as const,
+    sources: {
+      osm: {
+        type: "raster" as const,
+        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        tileSize: 256,
+        attribution: "© OpenStreetMap contributors"
+      },
+    },
+    layers: [
+      {
+        id: "osm-tiles",
+        type: "raster" as const,
+        source: "osm",
+        paint: {
+          "raster-opacity": 0.9
+        }
+      },
+    ],
+  }), []);
+
   return (
     <Map
       ref={mapRef}
@@ -43,23 +66,7 @@ export default function MainMap() {
         zoom: 5
       }}
       style={{ width: "100%", height: "100vh" }}
-      mapStyle={{
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-          },
-        },
-        layers: [
-          {
-            id: "osm-tiles",
-            type: "raster",
-            source: "osm",
-          },
-        ],
-      }}
+      mapStyle={mapStyle}
     >
       <NavigationControl position="bottom-right" />
 
