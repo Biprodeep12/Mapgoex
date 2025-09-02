@@ -20,10 +20,10 @@ interface Feature {
 
 type busDataType = {
   label: string,
-  Point1: [number,number],
-  Point2: [number,number],
-  Point1Name: string,
-  Point2Name: string,
+  A: [number,number],
+  B: [number,number],
+  NameA: string,
+  NameB: string,
 }
 
 const UserInter = () => {
@@ -31,8 +31,8 @@ const UserInter = () => {
     setUserLocation, 
     userLocation, 
     setMapCenter, 
-    searchBuses, 
-    fetchRoute, 
+    fetchRoute,
+    fetchBusInfo,
     setSelectedBus, 
   } = useMapContext();
 
@@ -93,10 +93,15 @@ const UserInter = () => {
 
   const handleSearch = () => {
     if (!searchInput.trim()) return;
-    
-    const buses = searchBuses(searchInput);
-    setBusSearchResults(buses);
-    
+    setBusSearchResults([
+      {
+        label: 'A15',
+        A: [88.377639, 22.465722],
+        B: [88.366083, 22.542861],
+        NameA: 'Garia More',
+        NameB: 'Park Circus 7 Point',
+      }
+    ]);
     getCoordsFromLocationORS();
   };
 
@@ -105,9 +110,10 @@ const UserInter = () => {
     setLoadingRoute(true);
     
     try {
-      await fetchRoute(bus.Point1, bus.Point2);
-      const centerLng = (bus.Point1[0] + bus.Point2[0]) / 2;
-      const centerLat = (bus.Point1[1] + bus.Point2[1]) / 2;
+      await fetchRoute(bus.A, bus.B);
+      await fetchBusInfo(bus.label);
+      const centerLng = (bus.A[0] + bus.B[0]) / 2;
+      const centerLat = (bus.A[1] + bus.B[1]) / 2;
       setMapCenter({ center: [centerLng, centerLat], zoom: 12 });
       setSearchInput('');
       setBusSearchResults([]);
@@ -130,7 +136,7 @@ const UserInter = () => {
     <>
       <div className="fixed top-5 left-5 max-[500px]:left-1/2 max-[500px]:-translate-x-1/2 max-[500px]:w-[90%] flex flex-col items-center gap-3">
         <div className="rounded-4xl px-4 py-2 bg-white drop-shadow-2xl flex flex-row gap-3 items-center max-[500px]:w-full">
-          {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
+          {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500 shrink-0"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
           <input
             type="search" 
             placeholder="Search your destinations"
@@ -141,8 +147,8 @@ const UserInter = () => {
                 handleSearch();
               }
             }}
-            className="flex-1 outline-none text-lg" />
-            <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>
+            className="flex-1 outline-none text-lg min-w-0" />
+            <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100 shrink-0"/>
         </div>
         
         {searchInput && busSearchResults.length > 0 &&
@@ -160,10 +166,10 @@ const UserInter = () => {
             >
               <div className="font-bold text-blue-700 text-xl">{bus.label}</div>
               <div className="text-sm text-gray-600 mt-1">
-                <span className="font-medium">From:</span> {bus.Point1Name}
+                <span className="font-medium">From:</span> {bus.NameA}
               </div>
               <div className="text-sm text-gray-600">
-                <span className="font-medium">To:</span> {bus.Point2Name}
+                <span className="font-medium">To:</span> {bus.NameB}
               </div>
               {loadingRoute && (
                 <div className="flex items-center gap-2 mt-2">

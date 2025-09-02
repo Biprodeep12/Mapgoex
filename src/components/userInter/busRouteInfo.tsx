@@ -1,55 +1,8 @@
 import { useMapContext } from "@/context/MapContext"
-import { busStopsInfo } from "@/utils/busStops"; 
-import { useEffect, useState } from "react";
-import * as turf from "@turf/turf";
 
 export const BusRouteInfo = () => {
-    const { selectedBus, routeGeoJSON, setSelectedBus, setRouteGeoJSON } = useMapContext();
-    const [busStopsInfoData, setBusStopsInfoData] = useState<string[]>([]);
-    const [loadingStops, setLoadingStops] = useState(false);
-    
-    // Calculate bus stops at the component level
-    const getBusStops = () => {
-        if(!routeGeoJSON) return [];
-        const intervalMeters = 1000;
-        const coords = routeGeoJSON.features[0].geometry.coordinates;
-        const line = turf.lineString(coords);
-        const totalDistance = routeGeoJSON?.features[0]?.properties?.segments[0].distance;
-        const numStops = Math.floor(totalDistance / intervalMeters);
-        
-        const busStops: [number, number][] = [];
-        for (let i = 1; i <= numStops; i++) {
-            const point = turf.along(line, (i * intervalMeters) / 1000, { units: "kilometers" });
-            busStops.push(point.geometry.coordinates as [number, number]);
-        }
-        return busStops;
-    };
-    
-    useEffect(() => {
-        const fetchBusStopsInfo = async () => {
-            if (!selectedBus || !routeGeoJSON) return;
-            
-            setLoadingStops(true);
-            const stops = getBusStops();
-            const stopsInfo: string[] = [];
-            
-            for (const stop of stops) {
-                try {
-                    const info = await busStopsInfo(stop);
-                    stopsInfo.push(info);
-                } catch (error) {
-                    stopsInfo.push("Location unavailable");
-                }
-            }
-            
-            setBusStopsInfoData(stopsInfo);
-            setLoadingStops(false);
-        };
-        
-        fetchBusStopsInfo();
-    }, [selectedBus, routeGeoJSON]);
-    
-    const busStops = getBusStops();
+    const { selectedBus, routeGeoJSON, setSelectedBus, setRouteGeoJSON, selectedBusRouteInfo } = useMapContext();
+
     
     return(
         <>
@@ -64,28 +17,23 @@ export const BusRouteInfo = () => {
                   <div className="font-bold text-xl text-blue-700">{selectedBus.label}</div>
                 </div>
                 <div className="text-lg text-gray-600 space-y-1 mb-3">
-                  <div><span className="font-medium">From:</span> {selectedBus.Point1Name}</div>
-                  <div><span className="font-medium">To:</span> {selectedBus.Point2Name}</div>
-                  <div><span className="font-medium">Stops:</span> {busStops.length}</div>
+                  <div><span className="font-medium">From:</span> {selectedBus.NameA}</div>
+                  <div><span className="font-medium">To:</span> {selectedBus.NameB}</div>
+                  <div><span className="font-medium">Stops:</span> 9</div>
                 </div>
-                
-                {/* <div className="border-t pt-3">
-                    <div className="text-sm font-medium text-gray-700 mb-2">Route Stops:</div>
-                    {loadingStops ? (
-                        <div className="text-center py-4 text-gray-500">
-                            Loading stops information...
+
+                {selectedBusRouteInfo &&
+                <div className="flex flex-col gap-5 w-full overflow-y-auto max-h-[300px]">
+                    {selectedBusRouteInfo?.busStops?.map((stop)=>(
+                        <div key={stop.stopId} className="grid grid-cols-[20%_80%] min-h-25">
+                            <div></div>
+                            <div className="flex flex-col rounded-lg border-[1px] p-2 justify-center">
+                                <div className="text-xl font-bold">{stop.name}</div>
+                                <div className="text-xl">Est Time: ????</div>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                            {busStopsInfoData.map((stopInfo, index) => (
-                                <div key={index} className="flex items-center gap-2 text-sm">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                    <span className="text-gray-600">{stopInfo}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div> */}
+                    ))}
+                </div>}
                 
                 <button
                   onClick={() => {

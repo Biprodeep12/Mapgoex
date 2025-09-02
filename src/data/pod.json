@@ -1,0 +1,39 @@
+{
+  "A15": {
+    "startPoint": {
+      "name": "Garia More",
+      "coords": [88.377639, 22.465722]
+    },
+    "endPoint": {
+      "name": "Park Circus 7 Point",
+      "coords": [88.366083, 22.542861]
+    },
+    "busStops": [
+      {
+        "stopId": "S1",
+        "name": "Dinabandhu Andrews College",
+        "coords": [88.377847, 22.468538]
+      },
+      {
+        "stopId": "S2",
+        "name": "Ramgarh More",
+        "coords": [88.376498, 22.474937]
+      },
+      {
+        "stopId": "S3",
+        "name": "Ganguly Bagan",
+        "coords": [88.375884, 22.480164]
+      },
+      {
+        "stopId": "S4",
+        "name": "Bagha Jatin",
+        "coords": [88.375496, 22.483823]
+      },
+      {
+        "stopId": "S5",
+        "name": "Annapurna",
+        "coords": [88.374731, 22.486158]
+      }
+    ]
+  }
+}
