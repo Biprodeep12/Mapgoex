@@ -1,10 +1,8 @@
 import axios from "axios";
 import { GeocodingResult } from "@/types/bus";
 
-// Cache for geocoding results to avoid repeated API calls
 const geocodingCache = new Map<string, string>();
 
-// Debounce function to limit API calls
 function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number
@@ -18,15 +16,9 @@ function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   };
 }
 
-// Generate cache key from coordinates
 const getCacheKey = (lat: number, lon: number): string => 
   `${lat.toFixed(6)}_${lon.toFixed(6)}`;
 
-/**
- * Fetches location information for given coordinates
- * @param coords - [longitude, latitude] coordinates
- * @returns Promise<string> - Location name or fallback text
- */
 export const busStopsInfo = async (coords: [number, number]): Promise<string> => {
   if (!coords || coords.length !== 2) {
     return "Invalid coordinates";
@@ -35,7 +27,6 @@ export const busStopsInfo = async (coords: [number, number]): Promise<string> =>
   const [lon, lat] = coords;
   const cacheKey = getCacheKey(lat, lon);
   
-  // Check cache first
   if (geocodingCache.has(cacheKey)) {
     return geocodingCache.get(cacheKey)!;
   }
@@ -56,7 +47,6 @@ export const busStopsInfo = async (coords: [number, number]): Promise<string> =>
     if (data.address) {
       const { suburb, city, state, country, village, town } = data.address;
       
-      // Prioritize location names for better user experience
       let locationName = "Unknown location";
       
       if (suburb && city) {
@@ -73,7 +63,6 @@ export const busStopsInfo = async (coords: [number, number]): Promise<string> =>
         locationName = country;
       }
       
-      // Cache the result
       geocodingCache.set(cacheKey, locationName);
       return locationName;
     }
@@ -82,22 +71,18 @@ export const busStopsInfo = async (coords: [number, number]): Promise<string> =>
   } catch (err) {
     console.error("Error fetching location info:", err);
     
-    // Return cached fallback if available, otherwise return error message
     const fallback = "Location unavailable";
     geocodingCache.set(cacheKey, fallback);
     return fallback;
   }
 };
 
-// Debounced version for better performance in rapid calls
 export const busStopsInfoDebounced = debounce(busStopsInfo, 300);
 
-// Clear cache function for memory management
 export const clearGeocodingCache = (): void => {
   geocodingCache.clear();
 };
 
-// Get cache statistics
 export const getCacheStats = (): { size: number; keys: string[] } => {
   return {
     size: geocodingCache.size,

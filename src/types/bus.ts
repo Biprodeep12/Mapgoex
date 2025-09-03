@@ -2,9 +2,6 @@ export interface BusStop {
   stopId: string;
   name: string;
   coords: [number, number];
-  estimatedTime?: string;
-  distance?: number;
-  isTerminal?: boolean;
 }
 
 export interface BusData {
@@ -19,13 +16,6 @@ export interface BusData {
     coords: [number, number];
   };
   busStops: BusStop[];
-  totalDistance?: number;
-  estimatedDuration?: number;
-  frequency?: string;
-  operatingHours?: {
-    start: string;
-    end: string;
-  };
 }
 
 export interface BusRoute {
@@ -35,8 +25,6 @@ export interface BusRoute {
   B: [number, number];
   NameA: string;
   NameB: string;
-  color?: string;
-  isActive?: boolean;
 }
 
 export type BusRoutes = Record<string, BusData>;

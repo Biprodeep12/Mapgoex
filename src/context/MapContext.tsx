@@ -1,32 +1,28 @@
 import { createContext, useContext, useState, useCallback, useMemo } from "react";
 import type { FeatureCollection, LineString, Feature } from "geojson";
 import axios from "axios";
-import { BusData, BusRoute, LocationInfo } from "@/types/bus";
+import { BusData, BusRoute } from "@/types/bus";
 
 interface MapContextType {
-  // User location state
   userLocation: [number, number] | null;
   setUserLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
   
-  // Anonymous location state (for map clicks)
   anonLocation: [number, number] | null;
   setAnonLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
   
-  // Bus route state
+  activeLiveBus: boolean;
+  setActiveLiveBus: React.Dispatch<React.SetStateAction<boolean>>
   selectedBus: BusRoute | null;
   setSelectedBus: React.Dispatch<React.SetStateAction<BusRoute | null>>;
   selectedBusRouteInfo: BusData | null;
   setSelectedBusRouteInfo: React.Dispatch<React.SetStateAction<BusData | null>>;
   
-  // Route data
   routeGeoJSON: ORSGeoJSON | null;
   setRouteGeoJSON: React.Dispatch<React.SetStateAction<ORSGeoJSON | null>>;
   
-  // Map view state
   mapCenter: MapCenterType;
   setMapCenter: React.Dispatch<React.SetStateAction<MapCenterType>>;
   
-  // Actions
   fetchBusInfo: (id: string) => Promise<void>;
   fetchRoute: (start: [number, number], end: [number, number]) => Promise<void>;
   clearRoute: () => void;
@@ -45,22 +41,19 @@ interface MapCenterType {
 const MapContext = createContext<MapContextType | undefined>(undefined);
 
 export function MapProvider({ children }: { children: React.ReactNode }) {
-  // Map view state
   const [mapCenter, setMapCenter] = useState<MapCenterType>({
     center: [88.3639, 22.5726],
     zoom: 15,
   });
   
-  // Location state
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [anonLocation, setAnonLocation] = useState<[number, number] | null>(null);
   
-  // Route state
   const [routeGeoJSON, setRouteGeoJSON] = useState<ORSGeoJSON | null>(null);
+  const [activeLiveBus, setActiveLiveBus] = useState(false);
   const [selectedBus, setSelectedBus] = useState<BusRoute | null>(null);
   const [selectedBusRouteInfo, setSelectedBusRouteInfo] = useState<BusData | null>(null);
 
-  // Memoized actions to prevent unnecessary re-renders
   const fetchRoute = useCallback(async (start: [number, number], end: [number, number]) => {
     try {
       const res = await axios.post(
@@ -105,7 +98,6 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     setSelectedBusRouteInfo(null);
   }, []);
 
-  // Memoized context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     userLocation,
     setUserLocation,
@@ -119,6 +111,8 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     setMapCenter,
     selectedBus,
     setSelectedBus,
+    activeLiveBus,
+    setActiveLiveBus,
     selectedBusRouteInfo,
     setSelectedBusRouteInfo,
     clearRoute,
@@ -128,6 +122,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     anonLocation,
     routeGeoJSON,
     selectedBus,
+    activeLiveBus,
     selectedBusRouteInfo,
     mapCenter,
     fetchRoute,

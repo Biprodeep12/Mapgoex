@@ -34,7 +34,8 @@ const UserInter = () => {
     setMapCenter, 
     fetchRoute,
     fetchBusInfo,
-    setSelectedBus, 
+    setSelectedBus,
+    setActiveLiveBus
   } = useMapContext();
 
   const [searchInput, setSearchInput] = useState('')
@@ -114,6 +115,7 @@ const UserInter = () => {
     try {
       await fetchRoute(bus.A, bus.B);
       await fetchBusInfo(bus.label);
+      setActiveLiveBus(true);
       const centerLng = (bus.A[0] + bus.B[0]) / 2;
       const centerLat = (bus.A[1] + bus.B[1]) / 2;
       setMapCenter({ center: [centerLng, centerLat], zoom: 12 });

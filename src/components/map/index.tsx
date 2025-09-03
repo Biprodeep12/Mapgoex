@@ -4,6 +4,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
+import * as turf from "@turf/turf";
+import Image from "next/image";
+
+type Coord = [number, number];
 
 export default function MainMap() {
   const { 
@@ -12,14 +16,16 @@ export default function MainMap() {
     mapCenter, 
     selectedBus,
     setAnonLocation,
-    selectedBusRouteInfo
+    selectedBusRouteInfo,
+    activeLiveBus,
+    setActiveLiveBus
   } = useMapContext();
   const mapRef = useRef<MapRef>(null);
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
+  const [busPos, setBusPos] = useState<Coord | null>(null);
   
   useEffect(() => {
     if (!selectedBus || !routeGeoJSON || !selectedBusRouteInfo) return;
-    console.log(selectedBusRouteInfo);
     
     const coordsArray: [number, number][] =
       selectedBusRouteInfo.busStops.map(
@@ -33,7 +39,34 @@ export default function MainMap() {
     mapRef.current?.flyTo(mapCenter);
   },[mapCenter])
 
-  // Memoized map style to prevent unnecessary re-renders
+  const routeCoords = routeGeoJSON?.features[0]?.geometry?.coordinates;
+
+  useEffect(() => {
+    if(!routeCoords) return;
+    if (!activeLiveBus || routeCoords.length === 0) return;
+    console.log('running');
+    
+    const line = turf.lineString(routeCoords);
+    const length = turf.length(line, { units: "kilometers" });
+
+    let step = 0;
+    const totalSteps = 200;
+
+    const timer = setInterval(() => {
+      const dist = (length / totalSteps) * step;
+      const point = turf.along(line, dist, { units: "kilometers" });
+      setBusPos(point.geometry.coordinates as Coord);
+
+      step++;
+      if (step > totalSteps) {
+        clearInterval(timer);
+        setActiveLiveBus(false);
+      }
+    }, 500);
+
+    return () => clearInterval(timer);
+  }, [activeLiveBus, routeCoords]);
+
   const mapStyle = useMemo(() => ({
     version: 8 as const,
     sources: {
@@ -97,6 +130,21 @@ export default function MainMap() {
                 </Marker>
             ))}
 
+            {activeLiveBus && busPos && (
+              <Marker
+                longitude={busPos[0]}
+                latitude={busPos[1]}
+                anchor="bottom"
+              >
+                 <Image
+                    src='/bus.png'
+                    width={40}
+                    height={40}
+                    alt="buslogo"
+                    className="rotate-90"
+                  />
+              </Marker>
+            )}
         </>
       )}
 
