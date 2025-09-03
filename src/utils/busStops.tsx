@@ -1,5 +1,6 @@
 import axios from "axios";
 import { GeocodingResult } from "@/types/bus";
+import * as turf from "@turf/turf";
 
 const geocodingCache = new Map<string, string>();
 
@@ -89,3 +90,13 @@ export const getCacheStats = (): { size: number; keys: string[] } => {
     keys: Array.from(geocodingCache.keys())
   };
 };
+
+export function isAtStop(busPos: [number, number], stopPos: [number, number]): boolean {
+  const busPoint = turf.point(busPos);
+  const stopPoint = turf.point(stopPos);
+
+  // turf.distance returns kilometers by default; convert to meters for comparison
+  const distanceKm = turf.distance(busPoint, stopPoint, { units: "kilometers" });
+  const distanceMeters = distanceKm * 1000;
+  return distanceMeters <= 100; // consider at stop within 100 meters
+}

@@ -33,6 +33,91 @@
         "stopId": "S5",
         "name": "Annapurna",
         "coords": [88.374731, 22.486158]
+      },
+      {
+        "stopId": "S6",
+        "name": "Sulekha",
+        "coords": [88.372332, 22.490907]
+      },
+      {
+        "stopId": "S7",
+        "name": "KPC Hospital",
+        "coords": [88.371715, 22.493499]
+      },
+      {
+        "stopId": "S8",
+        "name": "8B, Bus Stop",
+        "coords": [88.370852, 22.495565]
+      },
+      {
+        "stopId": "S9",
+        "name": " Jadavpur University Gate No.4",
+        "coords": [88.369392, 22.499831]
+      },
+      {
+        "stopId": "S10",
+        "name": "Jadavpur",
+        "coords": [88.367854, 22.502927]
+      },
+      {
+        "stopId": "S11",
+        "name": "Jodhpur Park",
+        "coords": [88.367246, 22.505197]
+      },
+      {
+        "stopId": "S12",
+        "name": "Dhakuria",
+        "coords": [88.367517, 22.509359]
+      },
+      {
+        "stopId": "S13",
+        "name": "Panchanan Tala",
+        "coords": [88.367123, 22.513890]
+      },
+      {
+        "stopId": "S14",
+        "name": "Golpark",
+        "coords": [88.366182, 22.516679]
+      },
+      {
+        "stopId": "S15",
+        "name": "Gariahat More",
+        "coords": [88.365318, 22.519607]
+      },
+      {
+        "stopId": "S16",
+        "name": "Ballygunge Shiksha Sadan",
+        "coords": [88.365573, 22.523737]
+      },
+      {
+        "stopId": "S17",
+        "name": "Gariahat Road - ITI",
+        "coords": [88.366000, 22.525372]
+      },
+      {
+        "stopId": "S18",
+        "name": "Ballygunge Phari",
+        "coords": [88.366084, 22.527810]
+      },
+      {
+        "stopId": "S19",
+        "name": "Ballygunge Park",
+        "coords": [88.364958, 22.531817]
+      },
+      {
+        "stopId": "S20",
+        "name": "Syed Amir Ali Avenue",
+        "coords": [88.364918, 22.536669]
+      },
+      {
+        "stopId": "S21",
+        "name": "Quest Mall",
+        "coords": [88.365167, 22.538672]
+      },
+      {
+        "stopId": "S22",
+        "name": "Zeeshan",
+        "coords": [88.365712, 22.541172]
       }
     ]
   }

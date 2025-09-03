@@ -6,6 +6,7 @@ import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
 import * as turf from "@turf/turf";
 import Image from "next/image";
+import { isAtStop } from "@/utils/busStops";
 
 type Coord = [number, number];
 
@@ -18,11 +19,18 @@ export default function MainMap() {
     setAnonLocation,
     selectedBusRouteInfo,
     activeLiveBus,
-    setActiveLiveBus
+    setActiveLiveBus,
+    busPos,
+    setBusPos,
+    reachedStopIds,
+    setReachedStopIds,
+    setBusSpeedKmh,
+    setReachedStopTimes
   } = useMapContext();
   const mapRef = useRef<MapRef>(null);
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
-  const [busPos, setBusPos] = useState<Coord | null>(null);
+  const prevBusPosRef = useRef<Coord | null>(null);
+  const reachedStopIdsRef = useRef<Set<string>>(new Set());
   
   useEffect(() => {
     if (!selectedBus || !routeGeoJSON || !selectedBusRouteInfo) return;
@@ -42,9 +50,16 @@ export default function MainMap() {
   const routeCoords = routeGeoJSON?.features[0]?.geometry?.coordinates;
 
   useEffect(() => {
+    reachedStopIdsRef.current = reachedStopIds;
+  }, [reachedStopIds]);
+
+  const stopIds = useMemo(() => {
+    return selectedBusRouteInfo?.busStops.map(s => s.stopId) ?? [];
+  }, [selectedBusRouteInfo]);
+
+  useEffect(() => {
     if(!routeCoords) return;
     if (!activeLiveBus || routeCoords.length === 0) return;
-    console.log('running');
     
     const line = turf.lineString(routeCoords);
     const length = turf.length(line, { units: "kilometers" });
@@ -55,17 +70,59 @@ export default function MainMap() {
     const timer = setInterval(() => {
       const dist = (length / totalSteps) * step;
       const point = turf.along(line, dist, { units: "kilometers" });
-      setBusPos(point.geometry.coordinates as Coord);
+      const pos = point.geometry.coordinates as Coord
+      setBusPos(pos);
+      const prev = prevBusPosRef.current;
+      if (prev) {
+        const prevPoint = turf.point(prev);
+        const currPoint = turf.point(pos);
+        const dKm = turf.distance(prevPoint, currPoint, { units: "kilometers" });
+        const seconds = 5;
+        const kmh = seconds > 0 ? (dKm / seconds) * 3600 : 0;
+        setBusSpeedKmh(kmh);
+      }
+      prevBusPosRef.current = pos;
+
+      busStopInfo.forEach((stop, idx)=>{
+        const stopId = stopIds[idx];
+        if (!stopId) return;
+        if (reachedStopIdsRef.current.has(stopId)) return;
+        if (isAtStop(pos, stop)) {
+          const updated = new Set(reachedStopIdsRef.current);
+          updated.add(stopId);
+          setReachedStopIds(updated);
+          setReachedStopTimes(prev => ({
+            ...prev,
+            [stopId]: Date.now()
+          }));
+        }
+      })
 
       step++;
       if (step > totalSteps) {
         clearInterval(timer);
         setActiveLiveBus(false);
       }
-    }, 500);
+    }, 5000);
 
     return () => clearInterval(timer);
-  }, [activeLiveBus, routeCoords]);
+  }, [activeLiveBus, routeCoords, busStopInfo, stopIds]);
+
+  useEffect(() => {
+    if (!activeLiveBus) {
+      setReachedStopIds(new Set());
+      setBusSpeedKmh(null);
+      setReachedStopTimes({});
+      prevBusPosRef.current = null;
+    }
+  }, [activeLiveBus, setReachedStopIds, setBusSpeedKmh, setReachedStopTimes]);
+
+  useEffect(() => {
+    setReachedStopIds(new Set());
+    setBusSpeedKmh(null);
+    setReachedStopTimes({});
+    prevBusPosRef.current = null;
+  }, [routeCoords, selectedBus, setReachedStopIds, setBusSpeedKmh, setReachedStopTimes]);
 
   const mapStyle = useMemo(() => ({
     version: 8 as const,
@@ -126,7 +183,7 @@ export default function MainMap() {
                 <Marker key={indx} longitude={stop[0]} latitude={stop[1]} anchor="bottom">
                     <div 
                         onClick={() => setAnonLocation(stop)} 
-                        className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
+                        className={`w-4 h-4 ${selectedBusRouteInfo && reachedStopIds.has(selectedBusRouteInfo.busStops[indx].stopId) ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
                 </Marker>
             ))}
 
