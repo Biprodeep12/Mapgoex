@@ -16,7 +16,7 @@ export default function MainMap() {
     routeGeoJSON, 
     mapCenter, 
     selectedBus,
-    setAnonLocation,
+    setMapCenter,
     selectedBusRouteInfo,
     activeLiveBus,
     setActiveLiveBus,
@@ -124,6 +124,10 @@ export default function MainMap() {
     prevBusPosRef.current = null;
   }, [routeCoords, selectedBus, setReachedStopIds, setBusSpeedKmh, setReachedStopTimes]);
 
+  const Focus = (coords: [number,number]) => {
+    setMapCenter({center:coords,zoom:15})
+  }
+
   const mapStyle = useMemo(() => ({
     version: 8 as const,
     sources: {
@@ -169,20 +173,20 @@ export default function MainMap() {
         <>
             <Marker longitude={selectedBus.A[0]} latitude={selectedBus.A[1]} anchor="bottom">
                 <div 
-                    onClick={() => setAnonLocation(selectedBus.A)}
+                    onClick={() => Focus(selectedBus.A)}
                     className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
             </Marker>
             
             <Marker longitude={selectedBus.B[0]} latitude={selectedBus.B[1]} anchor="bottom">
                 <div 
-                    onClick={() => setAnonLocation(selectedBus.B)} 
+                    onClick={() => Focus(selectedBus.B)} 
                     className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg"></div>
             </Marker>
             
             {busStopInfo?.map((stop, indx) => (
                 <Marker key={indx} longitude={stop[0]} latitude={stop[1]} anchor="bottom">
                     <div 
-                        onClick={() => setAnonLocation(stop)} 
+                        onClick={() => Focus(stop)} 
                         className={`w-4 h-4 ${selectedBusRouteInfo && reachedStopIds.has(selectedBusRouteInfo.busStops[indx].stopId) ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
                 </Marker>
             ))}

@@ -15,7 +15,7 @@ interface BusStopItemProps {
     <div className="grid grid-cols-[25%_15%_60%] h-15">
       <div className={`m-auto text-xl ${reached?'text-gray-500':'text-gray-900'}`}>{etaText?etaText:<LoaderCircle className="shrink-0 text-blue-400 animate-spin"/>}</div>
       <div className="relative flex-shrink-0 flex items-center justify-center">
-        <div className={`w-4 h-4 rounded-full border-2 ${reached ? 'bg-blue-300' : 'bg-blue-600'} border-blue-600`} />
+        <div className={`w-4 h-4 rounded-full border-2 ${reached ? 'bg-white' : 'bg-blue-600'} border-blue-600`} />
         <div className="absolute -z-10 top-1/2 left-1/2 -translate-1/2 bg-blue-400 w-2 h-full"></div>
       </div>
         

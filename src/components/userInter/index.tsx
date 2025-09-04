@@ -1,8 +1,10 @@
 import { useMapContext } from "@/context/MapContext";
-import { LocationInfo } from "@/utils/locationInfo";
-import { Loader2, LocateFixed, Search, Waypoints } from "lucide-react";
+import { Loader2, LocateFixed, Search, User, Waypoints } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
+import AuthPage from "../Auth";
+import { useAuth } from "@/context/userContext";
+import Image from "next/image";
 
 interface SearchData {
   coords: [number, number],
@@ -38,11 +40,14 @@ const UserInter = () => {
     setActiveLiveBus
   } = useMapContext();
 
+  const { user } = useAuth();
+
   const [searchInput, setSearchInput] = useState('')
   const [searchData, setSearchData] = useState<SearchData[]>([])
   const [busSearchResults, setBusSearchResults] = useState<busDataType[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
+  const [authOpen,setAuthOpen] = useState(false)
 
   const handleGetLocation = () => {
     if(userLocation){
@@ -139,20 +144,34 @@ const UserInter = () => {
   return (
     <>
       <div className="fixed top-5 left-5 max-[500px]:left-1/2 max-[500px]:-translate-x-1/2 max-[500px]:w-[90%] flex flex-col items-center gap-3">
-        <div className="rounded-4xl px-4 py-2 bg-white drop-shadow-2xl flex flex-row gap-3 items-center max-[500px]:w-full">
-          {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500 shrink-0"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
-          <input
-            type="search" 
-            placeholder="Search your destinations"
-            value={searchInput}
-            onChange={(e)=> setSearchInput(e.target.value)}
-            onKeyDown={(e) => {
-              if(e.key=='Enter'){
-                handleSearch();
-              }
-            }}
-            className="flex-1 outline-none text-lg min-w-0" />
-            <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100 shrink-0"/>
+        <div className="flex flex-row gap-2.5 items-center justify-between w-full">
+          <div className="rounded-4xl px-4 py-2 bg-white drop-shadow-2xl flex flex-row gap-3 items-center min-w-0">
+            {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500 shrink-0"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
+            <input
+              type="search" 
+              placeholder="Search your destinations"
+              value={searchInput}
+              onChange={(e)=> setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if(e.key=='Enter'){
+                  handleSearch();
+                }
+              }}
+              className="flex-1 outline-none text-lg min-w-0" />
+              <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100 shrink-0"/>
+          </div>
+          <div onClick={()=> {if(!user)setAuthOpen(true)}} className="rounded-full max-[500px]:flex border-[3px] border-blue-500 w-12 h-12 shrink-0 hidden items-center justify-center">
+            {!user?.photoURL? 
+            <User className="bg-white w-9.5 h-9.5 rounded-full p-1"/>
+            :
+            <Image
+              src={user?.photoURL||''}
+              width={38}
+              height={38}
+              alt="profile"
+              className="rounded-full"
+            />}
+          </div>
         </div>
         
         {searchInput && busSearchResults.length > 0 &&
@@ -201,15 +220,31 @@ const UserInter = () => {
         </div>
         }
         
-        <LocationInfo/>
       </div>
+
+      <div className="fixed max-[500px]:hidden top-5 right-5">
+        <div onClick={()=> {if(!user)setAuthOpen(true)}} className="rounded-full border-[3px] border-blue-500 w-10 h-10 flex items-center justify-center">
+          {!user?.photoURL? 
+           <User className="bg-white w-8 h-8 rounded-full p-1"/>
+          :
+           <Image
+            src={user?.photoURL||''}
+            width={32}
+            height={32}
+            alt="profile"
+            className="rounded-full"
+           />}
+        </div>
+      </div>
+
+      {authOpen && <AuthPage/>}
 
       <div className="fixed right-2 bottom-40">
           <button
               onClick={handleGetLocation}
               className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
           >
-              <LocateFixed className="w-7 h-7"/>
+              <LocateFixed className="w-5 h-5"/>
           </button>
       </div>
       <BusRouteInfo/>

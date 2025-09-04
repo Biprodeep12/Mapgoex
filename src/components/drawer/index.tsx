@@ -8,7 +8,7 @@ interface BottomDrawerProps {
 
 const BottomDrawer = ({
   children,
-  minHeight = 215,
+  minHeight = 190,
   maxHeight: propMaxHeight,
 }: BottomDrawerProps) => {
 

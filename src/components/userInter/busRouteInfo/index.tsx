@@ -17,6 +17,8 @@ export const BusRouteInfo = memo(() => {
   const totalStops = selectedBusRouteInfo?.busStops?.length || 0;
   const distance = (routeGeoJSON?.features[0]?.properties?.summary?.distance) / 1000
 
+  if (!routeGeoJSON && !selectedBusRouteInfo) return null;
+
   return (
     <>
     <div className="fixed md:flex hidden flex-col md:top-5 md:left-5 md:bottom-5 max-md:bottom-0 md:max-w-[400px] w-full bg-white max-md:rounded-t-3xl md:rounded-xl drop-shadow-2xl border border-gray-100 overflow-hidden">
@@ -45,28 +47,27 @@ export const BusRouteInfo = memo(() => {
         </div>
         
       </div>
-      
-      {selectedBusRouteInfo && (
-        <div className="border-t border-gray-100 flex-1 flex flex-col overflow-y-hidden">
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <Bus className="w-4 h-4 text-gray-600" />
-              <div className="font-semibold text-gray-700">Route</div>
-              <div className="text-sm text-gray-500">({totalStops} stops)</div>
-              <div>{Number((distance).toFixed(1))} KM</div>
-            </div>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4">
-            <BusStops/>
+    
+      <div className="border-t border-gray-100 flex-1 flex flex-col overflow-y-hidden">
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Bus className="w-4 h-4 text-gray-600" />
+            <div className="font-semibold text-gray-700">Route</div>
+            <div className="text-sm text-gray-500">({totalStops} stops)</div>
+            <div>{Number((distance).toFixed(1))} KM</div>
           </div>
         </div>
-      )}
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          <BusStops/>
+        </div>
+      </div>
+
     </div>
     <BottomDrawer>
       <div className="flex flex-col w-full overflow-hidden">
 
-        <div className="p-6 pb-4">
+        <div className="px-6 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
