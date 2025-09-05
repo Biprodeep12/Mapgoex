@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+/* Hide only the top navbar iframe */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+    display: none;
+}
+
+body {
+  top: 0px !important;
+}
+
+.goog-te-gadget-simple {
+    border: none !important;
+}
+.goog-te-gadget-simple img{
+    display: none;
+}
+.VIpgJd-ZVi9od-xl07Ob-lTBxed span{
+    font-size: 20px;
+    border: none !important;
+}
+.VIpgJd-ZVi9od-l4eHX-hSRGPd{
+    display: none;
+}
+
+#goog-gt-tt,
+#goog-gt-tt:hover {
+  display: none !important;
+}
+.VIpgJd-suEOdc .VIpgJd-yAWNEb-L7lbkb .skiptranslate{
+    display: none !important;
+}

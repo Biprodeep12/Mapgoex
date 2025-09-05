@@ -2,9 +2,10 @@ import { useMapContext } from "@/context/MapContext";
 import { Loader2, LocateFixed, Search, User, Waypoints } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
-import AuthPage from "../Auth";
+import AuthPage, { Dropdown } from "../Auth";
 import { useAuth } from "@/context/userContext";
 import Image from "next/image";
+import Langhuh from "../Langhuh";
 
 interface SearchData {
   coords: [number, number],
@@ -48,6 +49,8 @@ const UserInter = () => {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [authOpen,setAuthOpen] = useState(false)
+  const [langTheme,setLangTheme] = useState(true)
+  const [openDropUser, setOpenDropUser] = useState(false);
 
   const handleGetLocation = () => {
     if(userLocation){
@@ -139,7 +142,14 @@ const UserInter = () => {
       setSearchData([]);
       setBusSearchResults([]);
     }
-  }, [searchInput]);  
+  }, [searchInput]);
+
+  useEffect(() => {
+      const huh = localStorage.getItem('lang')
+      if(huh){
+          setLangTheme(false)
+      }
+  },[setLangTheme])
 
   return (
     <>
@@ -160,7 +170,7 @@ const UserInter = () => {
               className="flex-1 outline-none text-lg min-w-0" />
               <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100 shrink-0"/>
           </div>
-          <div onClick={()=> {if(!user)setAuthOpen(true)}} className="rounded-full max-[500px]:flex border-[3px] border-blue-500 w-12 h-12 shrink-0 hidden items-center justify-center">
+          <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:flex border-[3px] border-blue-500 w-12 h-12 shrink-0 hidden items-center justify-center">
             {!user?.photoURL? 
             <User className="bg-white w-9.5 h-9.5 rounded-full p-1"/>
             :
@@ -171,6 +181,7 @@ const UserInter = () => {
               alt="profile"
               className="rounded-full"
             />}
+            {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen}/>}
           </div>
         </div>
         
@@ -223,21 +234,23 @@ const UserInter = () => {
       </div>
 
       <div className="fixed max-[500px]:hidden top-5 right-5">
-        <div onClick={()=> {if(!user)setAuthOpen(true)}} className="rounded-full border-[3px] border-blue-500 w-10 h-10 flex items-center justify-center">
-          {!user?.photoURL? 
-           <User className="bg-white w-8 h-8 rounded-full p-1"/>
-          :
-           <Image
-            src={user?.photoURL||''}
-            width={32}
-            height={32}
-            alt="profile"
-            className="rounded-full"
-           />}
-        </div>
+          <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:hidden border-[3px] border-blue-500 w-12 h-12 shrink-0 flex items-center justify-center">
+            {!user?.photoURL? 
+            <User className="bg-white w-9.5 h-9.5 rounded-full p-1"/>
+            :
+            <Image
+              src={user?.photoURL||''}
+              width={38}
+              height={38}
+              alt="profile"
+              className="rounded-full"
+            />}
+          </div>
+          {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen}/>}
       </div>
 
       {authOpen && <AuthPage/>}
+      {langTheme && <Langhuh setLangTheme={setLangTheme}/>}
 
       <div className="fixed right-2 bottom-40">
           <button
