@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { auth } from '@/firebase/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -13,10 +13,32 @@ import { useAuth } from '@/context/userContext';
 interface props {
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>
   setAuthOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setOpenDropUser: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-export const Dropdown = ({setLangTheme,setAuthOpen}:props) => {
+interface propsAuth {
+  setAuthOpen: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
   const { user } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				dropdownRef.current &&
+				!dropdownRef.current.contains(event.target as Node)
+			) {
+				setOpenDropUser(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -24,7 +46,7 @@ export const Dropdown = ({setLangTheme,setAuthOpen}:props) => {
   };
 
   return(
-    <div className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
+    <div ref={dropdownRef} className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
       <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1'>Language</button>
       {!user?
         <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full' onClick={()=>setAuthOpen(true)}>Login</button> 
@@ -35,12 +57,30 @@ export const Dropdown = ({setLangTheme,setAuthOpen}:props) => {
   )
 }
 
-const AuthPage = () => {
+const AuthPage = ({setAuthOpen}:propsAuth) => {
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				dropdownRef.current &&
+				!dropdownRef.current.contains(event.target as Node)
+			) {
+				setAuthOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +123,7 @@ const AuthPage = () => {
 
   return (
     <div className='fixed inset-0 z-20 flex items-center justify-center bg-white/20 backdrop-blur-[2px]'>
-      <div className='shadow-xl flex flex-col bg-white px-5 py-7 border transition-all duration-300 border-[#ccc] rounded-2xl items-center max-w-[400px] w-full'>
+      <div ref={dropdownRef} className='shadow-xl flex flex-col bg-white px-5 py-7 border transition-all duration-300 border-[#ccc] rounded-2xl items-center max-w-[400px] w-full'>
         <div className='text-3xl mb-4 font-bold'>
           {isRegister ? 'Register' : 'Login'}
         </div>

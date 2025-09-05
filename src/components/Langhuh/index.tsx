@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 interface huhProp {
   langTheme: boolean
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>;
@@ -19,6 +20,8 @@ const languages = [
 ];
 
 const Langhuh = ({ langTheme,setLangTheme }: huhProp) => {
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
     function changeLanguage(lang: string) {
         const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
         if (select) {
@@ -31,9 +34,25 @@ const Langhuh = ({ langTheme,setLangTheme }: huhProp) => {
         localStorage.setItem('lang',lang);
     }
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setLangTheme(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
   return (
     <div className={`fixed inset-0 z-20 ${langTheme?'flex':'hidden'} items-center justify-center bg-white/20 backdrop-blur-[2px]`}>
-        <div className="max-w-[320px] w-full bg-white shadow-2xl rounded-2xl p-4">
+        <div ref={dropdownRef} className="max-w-[320px] w-full bg-white shadow-2xl rounded-2xl p-4">
             <div className="flex justify-between items-center border-b pb-2 mb-3">
                 <div className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 🌐 Select Language

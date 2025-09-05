@@ -1,11 +1,12 @@
 import { useMapContext } from "@/context/MapContext";
-import { Loader2, LocateFixed, Search, User, Waypoints } from "lucide-react";
+import { Loader2, LocateFixed, Search, Sparkles, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
 import AuthPage, { Dropdown } from "../Auth";
 import { useAuth } from "@/context/userContext";
 import Image from "next/image";
 import Langhuh from "../Langhuh";
+import { Ai } from "./ai";
 
 interface SearchData {
   coords: [number, number],
@@ -51,6 +52,7 @@ const UserInter = () => {
   const [authOpen,setAuthOpen] = useState(false)
   const [langTheme,setLangTheme] = useState(false)
   const [openDropUser, setOpenDropUser] = useState(false);
+  const [openAi, setOpenAi] = useState(false)
 
   const handleGetLocation = () => {
     if(userLocation){
@@ -168,7 +170,9 @@ const UserInter = () => {
                 }
               }}
               className="flex-1 outline-none text-lg min-w-0" />
-              <Waypoints className="w-10 h-10 text-blue-600 p-2 cursor-pointer rounded-full hover:bg-gray-100 shrink-0"/>
+              <button onClick={()=>setOpenAi(!openAi)} className="group hover:bg-blue-50 shrink-0 p-2 cursor-pointer w-10 h-10 rounded-full">
+                <Sparkles className="text-blue-600 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"/>
+              </button>
           </div>
           <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:flex border-[3px] border-blue-500 w-12 h-12 shrink-0 hidden items-center justify-center">
             {!user?.photoURL? 
@@ -180,8 +184,8 @@ const UserInter = () => {
               height={38}
               alt="profile"
               className="rounded-full"
-            />}
-            {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen}/>}
+            />} 
+            {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen} setOpenDropUser={setOpenDropUser}/>}
           </div>
         </div>
         
@@ -233,6 +237,8 @@ const UserInter = () => {
         
       </div>
 
+      <Ai setOpenAi={setOpenAi} openAi={openAi}/>
+
       <div className="fixed max-[500px]:hidden top-5 right-5">
           <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:hidden border-[3px] border-blue-500 w-12 h-12 shrink-0 flex items-center justify-center">
             {!user?.photoURL? 
@@ -246,10 +252,10 @@ const UserInter = () => {
               className="rounded-full"
             />}
           </div>
-          {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen}/>}
+          {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen} setOpenDropUser={setOpenDropUser}/>}
       </div>
 
-      {authOpen && <AuthPage/>}
+      {authOpen && <AuthPage setAuthOpen={setAuthOpen}/>}
       <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
 
       <div className="fixed right-2 bottom-40">

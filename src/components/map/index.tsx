@@ -159,7 +159,7 @@ export default function MainMap() {
         latitude: 21.1466,
         zoom: 5
       }}
-      style={{ width: "100%", minHeight: "100vh" }}
+      style={{ width: "100%", height: "100vh" }}
       mapStyle={mapStyle}
     >
       <NavigationControl position="bottom-right" />
