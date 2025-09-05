@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
-
 interface huhProp {
+  langTheme: boolean
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -18,7 +18,7 @@ const languages = [
   { code: "or", name: "Odia" },
 ];
 
-const Langhuh = ({ setLangTheme }: huhProp) => {
+const Langhuh = ({ langTheme,setLangTheme }: huhProp) => {
     function changeLanguage(lang: string) {
         const select = document.querySelector<HTMLSelectElement>(".goog-te-combo");
         if (select) {
@@ -32,7 +32,7 @@ const Langhuh = ({ setLangTheme }: huhProp) => {
     }
 
   return (
-    <div className='fixed inset-0 z-20 flex items-center justify-center bg-white/20 backdrop-blur-[2px]'>
+    <div className={`fixed inset-0 z-20 ${langTheme?'flex':'hidden'} items-center justify-center bg-white/20 backdrop-blur-[2px]`}>
         <div className="max-w-[320px] w-full bg-white shadow-2xl rounded-2xl p-4">
             <div className="flex justify-between items-center border-b pb-2 mb-3">
                 <div className="text-lg font-semibold text-gray-800 flex items-center gap-2">

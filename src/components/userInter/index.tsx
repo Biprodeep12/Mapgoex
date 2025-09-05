@@ -49,7 +49,7 @@ const UserInter = () => {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [authOpen,setAuthOpen] = useState(false)
-  const [langTheme,setLangTheme] = useState(true)
+  const [langTheme,setLangTheme] = useState(false)
   const [openDropUser, setOpenDropUser] = useState(false);
 
   const handleGetLocation = () => {
@@ -146,10 +146,10 @@ const UserInter = () => {
 
   useEffect(() => {
       const huh = localStorage.getItem('lang')
-      if(huh){
-          setLangTheme(false)
+      if(!huh){
+          setLangTheme(true)
       }
-  },[setLangTheme])
+  },[])
 
   return (
     <>
@@ -250,7 +250,7 @@ const UserInter = () => {
       </div>
 
       {authOpen && <AuthPage/>}
-      {langTheme && <Langhuh setLangTheme={setLangTheme}/>}
+      <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
 
       <div className="fixed right-2 bottom-40">
           <button
