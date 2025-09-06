@@ -31,7 +31,7 @@ export const BusRouteInfo = memo(() => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-            <h2 className="text-xl font-bold text-gray-900">{selectedBus.label}</h2>
+            <div className="text-xl font-bold text-gray-900">{selectedBus.id}</div>
           </div>
           <button 
             onClick={clearRoute}
@@ -71,7 +71,7 @@ export const BusRouteInfo = memo(() => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-              <h2 className="text-xl font-bold text-gray-900">{selectedBus.label}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{selectedBus.id}</h2>
             </div>
             <button 
               onClick={clearRoute}

@@ -36,7 +36,7 @@ export default function MainMap() {
     if (!selectedBus || !routeGeoJSON || !selectedBusRouteInfo) return;
     
     const coordsArray: [number, number][] =
-      selectedBusRouteInfo.busStops.map(
+      selectedBusRouteInfo.busStops?.map(
         (stop: BusStop) => stop.coords as [number, number]
       );
 
@@ -54,7 +54,7 @@ export default function MainMap() {
   }, [reachedStopIds]);
 
   const stopIds = useMemo(() => {
-    return selectedBusRouteInfo?.busStops.map(s => s.stopId) ?? [];
+    return selectedBusRouteInfo?.busStops?.map(s => s.stopId) ?? [];
   }, [selectedBusRouteInfo]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export default function MainMap() {
       }
       prevBusPosRef.current = pos;
 
-      busStopInfo.forEach((stop, idx)=>{
+      busStopInfo?.forEach((stop, idx)=>{
         const stopId = stopIds[idx];
         if (!stopId) return;
         if (reachedStopIdsRef.current.has(stopId)) return;

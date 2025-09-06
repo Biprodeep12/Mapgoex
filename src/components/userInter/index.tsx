@@ -24,11 +24,11 @@ interface Feature {
 
 type busDataType = {
   id: string;
-  label: string,
   A: [number,number],
   B: [number,number],
   NameA: string,
   NameB: string,
+  forward: boolean,
 }
 
 const UserInter = () => {
@@ -108,11 +108,11 @@ const UserInter = () => {
     setBusSearchResults([
       {
         id: 'A15',
-        label: 'A15',
         A: [88.377639, 22.465722],
         B: [88.366083, 22.542861],
         NameA: 'Garia More',
         NameB: 'Park Circus 7 Point',
+        forward: true,
       }
     ]);
     getCoordsFromLocationORS();
@@ -124,7 +124,7 @@ const UserInter = () => {
     
     try {
       await fetchRoute(bus.A, bus.B);
-      await fetchBusInfo(bus.label);
+      await fetchBusInfo(bus.id);
       setActiveLiveBus(true);
       const centerLng = (bus.A[0] + bus.B[0]) / 2;
       const centerLat = (bus.A[1] + bus.B[1]) / 2;
@@ -202,7 +202,7 @@ const UserInter = () => {
               disabled={loadingRoute}
               className="text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="font-bold text-blue-700 text-xl">{bus.label}</div>
+              <div className="font-bold text-blue-700 text-xl">{bus.id}</div>
               <div className="text-sm text-gray-600 mt-1">
                 <span className="font-medium">From:</span> {bus.NameA}
               </div>

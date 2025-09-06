@@ -88,7 +88,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
 
   const fetchBusInfo = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/buses/${id}`);
+      const res = await fetch(`/api/bus/${id}`);
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
