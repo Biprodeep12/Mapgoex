@@ -86,7 +86,7 @@ export const BusStops = () => {
 
     return(
         <>
-            {selectedBusRouteInfo &&
+            {selectedBusRouteInfo ?
             <>
             {selectedBusRouteInfo?.busStops?.map((stop, idx) => (
               <BusStopItem
@@ -97,6 +97,8 @@ export const BusStops = () => {
               />
             ))}
             </>
+            :
+            <div>Loading Bus Stops...</div>
             }
         </>
     )
