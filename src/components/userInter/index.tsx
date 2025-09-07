@@ -159,17 +159,17 @@ const UserInter = () => {
         <div className="flex flex-row gap-2.5 items-center justify-between w-full">
           <div className="rounded-4xl px-4 py-2 bg-white drop-shadow-2xl flex flex-row gap-3 items-center min-w-0">
             {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500 shrink-0"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
-            <input
-              type="search" 
-              placeholder="Search your destinations"
-              value={searchInput}
-              onChange={(e)=> setSearchInput(e.target.value)}
-              onKeyDown={(e) => {
-                if(e.key=='Enter'){
-                  handleSearch();
-                }
-              }}
-              className="flex-1 outline-none text-lg min-w-0" />
+              <input
+                type="search" 
+                placeholder="Search your destinations"
+                value={searchInput}
+                onChange={(e)=> setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if(e.key=='Enter'){
+                    handleSearch();
+                  }
+                }}
+                className="flex-1 outline-none text-lg min-w-0" />
               <button onClick={()=>setOpenAi(!openAi)} className="group hover:bg-blue-50 shrink-0 p-2 cursor-pointer w-10 h-10 rounded-full">
                 <Sparkles className="text-blue-600 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"/>
               </button>

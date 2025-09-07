@@ -46,7 +46,7 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
   };
 
   return(
-    <div ref={dropdownRef} className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
+    <div className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
       <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1'>Language</button>
       {!user?
         <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full' onClick={()=>setAuthOpen(true)}>Login</button> 
