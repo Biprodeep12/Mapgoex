@@ -135,7 +135,7 @@ export default function MainMap() {
         type: "raster" as const,
         tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
         tileSize: 256,
-        attribution: "© OpenStreetMap contributors"
+        attribution: "© MapGeox"
       },
     },
     layers: [
@@ -187,7 +187,7 @@ export default function MainMap() {
                 <Marker key={indx} longitude={stop[0]} latitude={stop[1]} anchor="bottom">
                     <div 
                         onClick={() => Focus(stop)} 
-                        className={`w-4 h-4 ${selectedBusRouteInfo && reachedStopIds.has(selectedBusRouteInfo.busStops[indx].stopId) ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
+                        className={`w-4 h-4 ${selectedBusRouteInfo && reachedStopIds.has(selectedBusRouteInfo?.busStops[indx]?.stopId) ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
                 </Marker>
             ))}
 
@@ -202,7 +202,7 @@ export default function MainMap() {
                     width={40}
                     height={40}
                     alt="buslogo"
-                    className="rotate-90"
+                    className="rotate-90 z-20"
                   />
               </Marker>
             )}

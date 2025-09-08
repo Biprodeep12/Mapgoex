@@ -24,7 +24,7 @@ export default async function handler(
       "You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, estimated arrival times, and related travel information. Always respond clearly, briefly, and completely. Keep answers short but useful.";
 
     if (busMatch) {
-      const busId = busMatch[1].toUpperCase(); // e.g., "A15", "B34"
+      const busId = busMatch[1].toUpperCase();
 
       const origin = req.headers.origin || "http://localhost:3000";
       const busRes = await fetch(`${origin}/api/bus/${busId}`);

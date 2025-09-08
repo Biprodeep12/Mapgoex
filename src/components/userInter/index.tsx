@@ -31,6 +31,25 @@ type busDataType = {
   forward: boolean,
 }
 
+const allBusData:busDataType[] = [
+  {
+    id: 'A15',
+    A: [88.377639, 22.465722],
+    B: [88.366083, 22.542861],
+    NameA: 'Garia More',
+    NameB: 'Park Circus 7 Point',
+    forward: true,
+  },
+  {
+    id: 'B22',
+    A: [88.377227, 22.465693],
+    B: [88.345291,22.493469],
+    NameA: 'Garia No.6',
+    NameB: 'Tollygunge Tram Depot',
+    forward: true,
+  }
+];
+
 const UserInter = () => {
   const { 
     setUserLocation, 
@@ -104,17 +123,17 @@ const UserInter = () => {
   };
 
   const handleSearch = () => {
-    if (!searchInput.trim()) return;
-    setBusSearchResults([
-      {
-        id: 'A15',
-        A: [88.377639, 22.465722],
-        B: [88.366083, 22.542861],
-        NameA: 'Garia More',
-        NameB: 'Park Circus 7 Point',
-        forward: true,
-      }
-    ]);
+    const query = searchInput.trim().toLowerCase();
+    if (!query) return;
+
+    const filteredResults = allBusData.filter(bus =>
+      bus.id.toLowerCase().includes(query) ||
+      bus.NameA.toLowerCase().includes(query) ||
+      bus.NameB.toLowerCase().includes(query)
+    );
+
+    setBusSearchResults(filteredResults);
+
     getCoordsFromLocationORS();
   };
 
@@ -258,7 +277,7 @@ const UserInter = () => {
       {authOpen && <AuthPage setAuthOpen={setAuthOpen}/>}
       <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
 
-      <div className="fixed right-2 bottom-40">
+      <div className="fixed right-2 bottom-55">
           <button
               onClick={handleGetLocation}
               className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
