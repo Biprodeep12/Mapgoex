@@ -45,6 +45,8 @@ export default function WeatherIcon({ weatherMain }: { weatherMain: string }) {
     setWeatherIconSrc(iconSrc);
   }, [weatherMain]);
 
+  if(weatherIconSrc==='') return;
+
   return (
     <Image src={weatherIconSrc} alt={weatherMain} width={100} height={100}/>
   );

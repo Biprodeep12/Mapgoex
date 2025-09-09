@@ -62,7 +62,7 @@ export const BusRouteInfo = memo(() => {
 
   if (!selectedBus || !routeGeoJSON) return null;
 
-  if (!routeGeoJSON && !selectedBusRouteInfo) return null;
+  if (!routeGeoJSON || !selectedBusRouteInfo) return null;
 
   return (
     <>
