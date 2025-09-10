@@ -1,9 +1,10 @@
 import { useMapContext } from "@/context/MapContext";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import * as turf from "@turf/turf";
 import { formatTime } from "@/utils/time";
 import { BusStop } from "@/types/bus";
 import { LoaderCircle } from "lucide-react";
+import sendWebNotification from "@/utils/notify";
 
 interface BusStopItemProps {
     stop: BusStop;
@@ -11,7 +12,25 @@ interface BusStopItemProps {
     reached: boolean;
   }
   
-  const BusStopItem = memo(({ stop, etaText, reached }: BusStopItemProps) => (
+  const BusStopItem = memo(({ stop, etaText, reached }: BusStopItemProps) => {
+
+  const prevReachedRef = useRef<boolean>(false);
+  const prevStopIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      !prevReachedRef.current &&
+      reached &&
+      stop.stopId !== prevStopIdRef.current
+    ) {
+      sendWebNotification('Stop Reached', stop.name);
+      prevStopIdRef.current = stop.stopId;
+    }
+
+    prevReachedRef.current = reached;
+  }, [reached]);
+
+    return(
     <div className="grid grid-cols-[25%_15%_60%] h-15">
       <div className={`m-auto text-xl ${reached?'text-gray-500':'text-gray-900'}`}>{etaText?etaText:<LoaderCircle className="shrink-0 text-blue-400 animate-spin"/>}</div>
       <div className="relative flex-shrink-0 flex items-center justify-center">
@@ -29,7 +48,8 @@ interface BusStopItemProps {
         </div>
       </div>
     </div>
-  ));
+    )
+  });
   
   BusStopItem.displayName = 'BusStopItem';
 
@@ -41,7 +61,7 @@ export const BusStops = () => {
         selectedBusRouteInfo,
         reachedStopTimes
     } = useMapContext();
-    const [nowTs, setNowTs] = useState<number>(Date.now());
+    const [nowTs, setNowTs] = useState<number>(Date.now());    
 
     useEffect(() => {
       const t = setInterval(() => setNowTs(Date.now()), 20000);
