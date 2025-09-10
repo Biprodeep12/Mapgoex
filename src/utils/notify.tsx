@@ -8,19 +8,24 @@ export default function sendWebNotification(title: string, body: string) {
   }
 
   if (!("Notification" in window) || !("serviceWorker" in navigator)) {
-    console.error("This browser does not support Notifications or Service Workers.");
+    console.error("Notifications or Service Workers not supported.");
     return;
   }
+
+  inFlightBodies.add(body);
 
   const send = () => {
     navigator.serviceWorker.ready
       .then(registration => {
-        registration.showNotification(title, { body });
-        sentBodies.add(body);
+        return registration.showNotification(title, { body });
+      })
+      .then(() => {
+        console.log('Notification sent:', body);
+        sentBodies.add(body);       // Mark as sent
         inFlightBodies.delete(body);
       })
       .catch(err => {
-        console.error("Failed to send notification:", err);
+        console.error('Failed to send notification:', err);
         inFlightBodies.delete(body);
       });
   };
@@ -28,7 +33,6 @@ export default function sendWebNotification(title: string, body: string) {
   if (Notification.permission === "granted") {
     send();
   } else if (Notification.permission !== "denied") {
-    inFlightBodies.add(body);
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
         send();
@@ -39,5 +43,6 @@ export default function sendWebNotification(title: string, body: string) {
     });
   } else {
     console.warn("Notification permission has been denied previously.");
+    inFlightBodies.delete(body);
   }
 };
