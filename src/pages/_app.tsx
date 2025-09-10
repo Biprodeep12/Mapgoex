@@ -38,6 +38,15 @@ declare global {
 export default function App({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/service-worker.js')
+        .then(reg => console.log('Service Worker Registered', reg))
+        .catch(err => console.error('Service Worker registration failed', err));
+    }
+  }, []);
+
+  useEffect(() => {
     const script = document.createElement("script");
     script.src =
       "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";

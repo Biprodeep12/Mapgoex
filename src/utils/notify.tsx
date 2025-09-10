@@ -7,15 +7,22 @@ export default function sendWebNotification(title: string, body: string) {
     return;
   }
 
-  if (!("Notification" in window)) {
-    console.error("This browser does not support desktop notifications.");
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    console.error("This browser does not support Notifications or Service Workers.");
     return;
   }
 
   const send = () => {
-    new Notification(title, { body });
-    sentBodies.add(body);
-    inFlightBodies.delete(body);
+    navigator.serviceWorker.ready
+      .then(registration => {
+        registration.showNotification(title, { body });
+        sentBodies.add(body);
+        inFlightBodies.delete(body);
+      })
+      .catch(err => {
+        console.error("Failed to send notification:", err);
+        inFlightBodies.delete(body);
+      });
   };
 
   if (Notification.permission === "granted") {
