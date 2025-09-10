@@ -6,13 +6,19 @@ import { BusStop } from "@/types/bus";
 import { LoaderCircle } from "lucide-react";
 import sendWebNotification from "@/utils/notify";
 
+interface MapCenterType {
+  center: [number, number];
+  zoom: number;
+}
+
 interface BusStopItemProps {
     stop: BusStop;
     etaText: string;
+    setMapCenter: React.Dispatch<React.SetStateAction<MapCenterType>>;
     reached: boolean;
   }
   
-  const BusStopItem = memo(({ stop, etaText, reached }: BusStopItemProps) => {
+  const BusStopItem = memo(({ stop, etaText, reached, setMapCenter }: BusStopItemProps) => {
 
   const prevReachedRef = useRef<boolean>(false);
   const prevStopIdRef = useRef<string | null>(null);
@@ -35,9 +41,9 @@ interface BusStopItemProps {
       <div className={`m-auto text-xl ${reached?'text-gray-500':'text-gray-900'}`}>{etaText?etaText:<LoaderCircle className="shrink-0 text-blue-400 animate-spin"/>}</div>
       <div className="relative flex-shrink-0 flex items-center justify-center">
         {stop.stopId==='START'|| stop.stopId==='END'?
-          <div className="w-5 h-5 rounded-full border-2 bg-blue-300 border-blue-600"/>
+          <div onClick={()=>setMapCenter({center: stop.coords,zoom: 15})} className="w-5 h-5 cursor-pointer rounded-full border-2 bg-blue-300 border-blue-600"/>
           :
-          <div className={`w-4 h-4 rounded-full border-2 ${reached ? 'bg-white' : 'bg-blue-600'} border-blue-600`}/>
+          <div onClick={()=>setMapCenter({center: stop.coords,zoom: 15})} className={`w-4 h-4 cursor-pointer rounded-full border-2 ${reached ? 'bg-white' : 'bg-blue-600'} border-blue-600`}/>
         }
         <div className={`absolute -z-10 ${stop.stopId==='START'?'bottom-0 -translate-x-1/2 h-1/2':stop.stopId==='END'?'top-0 -translate-1/2 h-full':'top-1/2 -translate-1/2 h-full'} left-1/2 bg-blue-400 w-2`}></div>
       </div>
@@ -59,7 +65,8 @@ export const BusStops = () => {
         reachedStopIds,
         busSpeedKmh,
         selectedBusRouteInfo,
-        reachedStopTimes
+        reachedStopTimes,
+        setMapCenter
     } = useMapContext();
     const [nowTs, setNowTs] = useState<number>(Date.now());    
 
@@ -112,6 +119,7 @@ export const BusStops = () => {
               <BusStopItem
                 key={stop.stopId}
                 stop={stop}
+                setMapCenter={setMapCenter}
                 etaText={displayTimes[idx + 1] ?? ''}
                 reached={reachedStopIds.has(stop.stopId)}
               />
