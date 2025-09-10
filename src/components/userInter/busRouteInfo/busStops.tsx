@@ -28,7 +28,7 @@ interface BusStopItemProps {
     }
 
     prevReachedRef.current = reached;
-  }, [reached]);
+  }, [reached, stop.stopId, stop.name]);
 
     return(
     <div className="grid grid-cols-[25%_15%_60%] h-15">

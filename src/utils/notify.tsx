@@ -1,8 +1,9 @@
 const sentBodies = new Set<string>();
+const inFlightBodies = new Set<string>();
 
 export default function sendWebNotification(title: string, body: string) {
-  if (sentBodies.has(body)) {
-    console.log("Notification with same body already sent. Skipping.");
+  if (sentBodies.has(body) || inFlightBodies.has(body)) {
+    console.log("Notification already sent or in progress. Skipping.");
     return;
   }
 
@@ -14,18 +15,19 @@ export default function sendWebNotification(title: string, body: string) {
   const send = () => {
     new Notification(title, { body });
     sentBodies.add(body);
+    inFlightBodies.delete(body);
   };
 
   if (Notification.permission === "granted") {
     send();
   } else if (Notification.permission !== "denied") {
+    inFlightBodies.add(body);
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
-        if (!sentBodies.has(body)) {
-          send();
-        }
+        send();
       } else {
         console.warn("Notification permission denied by user.");
+        inFlightBodies.delete(body);
       }
     });
   } else {
