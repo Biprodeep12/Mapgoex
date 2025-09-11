@@ -28,6 +28,7 @@ type busDataType = {
   B: [number,number],
   NameA: string,
   NameB: string,
+  busStops: string[],
   forward: boolean,
 }
 
@@ -38,6 +39,31 @@ const allBusData:busDataType[] = [
     B: [88.366083, 22.542861],
     NameA: 'Garia More',
     NameB: 'Park Circus 7 Point',
+    busStops: [
+    "Garia More",
+    "Dinabandhu Andrews College",
+    "Ramgarh More",
+    "Ganguly Bagan",
+    "Bagha Jatin",
+    "Annapurna",
+    "Sulekha",
+    "KPC Hospital",
+    "8B, Bus Stop",
+    "Jadavpur University Gate No.4",
+    "Jadavpur",
+    "Jodhpur Park",
+    "Dhakuria",
+    "Panchanan Tala",
+    "Golpark",
+    "Gariahat More",
+    "Ballygunge Shiksha Sadan",
+    "Gariahat Road - ITI",
+    "Ballygunge Phari",
+    "Ballygunge Park",
+    "Syed Amir Ali Avenue",
+    "Quest Mall",
+    "Zeeshan",
+    "Park Circus 7 Point"],
     forward: true,
   },
   {
@@ -46,6 +72,26 @@ const allBusData:busDataType[] = [
     B: [88.345291,22.493469],
     NameA: 'Garia No.6',
     NameB: 'Tollygunge Tram Depot',
+    busStops: [
+    "Garia No.6",
+    "Laxmi Narayan Colony",
+    "Rathtala",
+    "Gitanjali Metro Station",
+    "Naktala youth Club",
+    "Naktala",
+    "Bansdroni",
+    "Surya Nagar",
+    "Gachtala More",
+    "Netaji Nagar",
+    "Ranikuthi",
+    "Regent Park",
+    "Malancha",
+    "Maa Saraswati Library",
+    "Ashok Nagar Park",
+    "Ashok Nagar Bazar",
+    "NIIT Tollygunge",
+    "Tollygunge Tram Depot"
+  ],
     forward: true,
   }
 ];
@@ -129,8 +175,8 @@ const UserInter = () => {
     const filteredResults = allBusData.filter(bus =>
       bus.id.toLowerCase().includes(query) ||
       bus.NameA.toLowerCase().includes(query) ||
-      bus.NameB.toLowerCase().includes(query)
-    );
+      bus.NameB.toLowerCase().includes(query) ||
+      bus.busStops.some(element => element.toLowerCase().includes(query)))
 
     setBusSearchResults(filteredResults);
 
@@ -209,7 +255,7 @@ const UserInter = () => {
         </div>
         
         {searchInput && busSearchResults.length > 0 &&
-        <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2">
+        <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2 min-[500px]:max-w-[340px]">
           <div className="font-semibold text-blue-600 flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
             Bus Routes ({busSearchResults.length})
@@ -246,7 +292,7 @@ const UserInter = () => {
         </div>}
 
         {searchInput && searchData.length > 0 &&
-        <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2">
+        <div className="bg-white w-full text-lg drop-shadow-2xl min-[500px]:max-w-[340px] rounded-2xl p-3 flex flex-col gap-2">
             <div className="font-semibold text-gray-400">Destinations</div>
             {searchData.map((search,indx)=>(
                 <button key={indx} className="text-left cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-lg">{search.label}</button>
