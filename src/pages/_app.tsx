@@ -1,8 +1,14 @@
+import { BusSimulatorProvider } from "@/context/BusSimulatorContext";
 import { MapProvider } from "@/context/MapContext";
 import { AuthProvider } from "@/context/userContext";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { useEffect } from "react";
+// import dynamic from "next/dynamic";
+
+// const BusClientOnlyComponent = dynamic(() => import("@/components/ClientSide/busSimulation"), {
+//   ssr: false,
+// });
 
 declare global {
   interface Window {
@@ -68,9 +74,12 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <AuthProvider>
-      <MapProvider>
-        <Component {...pageProps} />
-      </MapProvider>
+      <BusSimulatorProvider>
+        <MapProvider>
+          {/* <BusClientOnlyComponent/> */}
+          <Component {...pageProps} />
+        </MapProvider>
+      </BusSimulatorProvider>
     </AuthProvider>
   );
 }

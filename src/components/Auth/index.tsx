@@ -9,6 +9,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { useAuth } from '@/context/userContext';
+import { Languages, LogIn, LogOut } from 'lucide-react';
 
 interface props {
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>
@@ -47,11 +48,20 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
 
   return(
     <div className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
-      <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1'>Language</button>
+      <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 flex flex-row gap-1 items-center'>
+        <Languages className='text-blue-600 w-5 h-5'/>
+        Language
+      </button>
       {!user?
-        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full' onClick={()=>setAuthOpen(true)}>Login</button> 
+        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center' onClick={()=>setAuthOpen(true)}>
+          <LogIn className='text-blue-600 w-5 h-5'/>
+          Login
+        </button> 
         :
-        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full' onClick={handleLogout}>Logout</button>
+        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center' onClick={handleLogout}>
+          <LogOut className='text-red-500 w-5 h-5'/>
+          Logout
+        </button>
       }
     </div>
   )

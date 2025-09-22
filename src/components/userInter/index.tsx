@@ -7,6 +7,7 @@ import { useAuth } from "@/context/userContext";
 import Image from "next/image";
 import Langhuh from "../Langhuh";
 import { Ai } from "./ai";
+import { useBusSimulator } from "@/context/BusSimulatorContext";
 
 interface SearchData {
   coords: [number, number],
@@ -104,9 +105,11 @@ const UserInter = () => {
     fetchRoute,
     fetchBusInfo,
     setSelectedBus,
-    setActiveLiveBus
+    selectedBus,
+    setActiveLiveBus,
+    selectedBusRouteInfo
   } = useMapContext();
-
+  const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop } = useBusSimulator();
   const { user } = useAuth();
 
   const [searchInput, setSearchInput] = useState('')
@@ -118,6 +121,12 @@ const UserInter = () => {
   const [langTheme,setLangTheme] = useState(false)
   const [openDropUser, setOpenDropUser] = useState(false);
   const [openAi, setOpenAi] = useState(false)
+
+  const getBusStopMinutes = (BusStopCount: number|null) => {
+    if (BusStopCount == null) return 0;
+      const minutes = Math.ceil(BusStopCount / 60);
+      return `${minutes} min${minutes > 1 ? "s" : ""}`;
+  }
 
   const handleGetLocation = () => {
     if(userLocation){
@@ -186,10 +195,12 @@ const UserInter = () => {
   const handleBusClick = async (bus: busDataType) => {
     setSelectedBus(bus);
     setLoadingRoute(true);
+    setRouteId(bus.id)
     
     try {
       await fetchRoute(bus.A, bus.B);
       await fetchBusInfo(bus.id);
+      subscribe();
       setActiveLiveBus(true);
       const centerLng = (bus.A[0] + bus.B[0]) / 2;
       const centerLat = (bus.A[1] + bus.B[1]) / 2;
@@ -285,21 +296,67 @@ const UserInter = () => {
         </div>}
 
         {searchInput && busSearchResults.length === 0 &&
-        <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3">
-          <div className="text-gray-500 text-center py-2">
-            No bus routes found for &quot;{searchInput}&quot;
+          <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3">
+            <div className="text-gray-500 text-center py-2">
+              No bus routes found for &quot;{searchInput}&quot;
+            </div>
           </div>
-        </div>}
+        }
 
         {searchInput && searchData.length > 0 &&
-        <div className="bg-white w-full text-lg drop-shadow-2xl min-[500px]:max-w-[340px] rounded-2xl p-3 flex flex-col gap-2">
-            <div className="font-semibold text-gray-400">Destinations</div>
-            {searchData.map((search,indx)=>(
-                <button key={indx} className="text-left cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-lg">{search.label}</button>
-            ))}
+          <div className="bg-white w-full text-lg drop-shadow-2xl min-[500px]:max-w-[340px] rounded-2xl p-3 flex flex-col gap-2">
+              <div className="font-semibold text-gray-400">Destinations</div>
+              {searchData.map((search,indx)=>(
+                  <button 
+                    key={indx} 
+                    onClick={()=>{
+                      setUserLocation(search.coords);
+                      setMapCenter({center: search.coords,zoom: 15})
+                      setSearchInput('');
+                    }}
+                      className="text-left cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    {search.label}
+                  </button>
+              ))}
+          </div>
+        }
+        {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
+        <div className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-col">
+          <div className="flex flex-row w-full items-center justify-between h-6 px-5">
+            <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
+          </div>
+          <div className="grid grid-cols-[70px_auto_70px] justify-between items-center text-center">
+            <div className="text-lg font-semibold text-gray-800">{selectedBus.id}</div>
+            <div className="flex flex-col items-center">
+              <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
+                {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
+              </div>
+              {!busStopsETA[trackingBusStop.busStopID]?.reached?
+                <div className="text-sm text-gray-500">
+                  Reaching in <br/>Less than{" "}
+                  <span className="font-medium text-gray-700">
+                    {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
+                  </span>
+                </div>
+                :
+                <div className="text-sm text-gray-500">Reached</div>
+              }
+            </div>
+            <div className="text-base font-semibold text-gray-800">
+              {selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}
+            </div>
+          </div>
         </div>
         }
-        
+
       </div>
 
       <Ai setOpenAi={setOpenAi} openAi={openAi}/>
@@ -322,6 +379,20 @@ const UserInter = () => {
 
       {authOpen && <AuthPage setAuthOpen={setAuthOpen}/>}
       <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
+
+      <div className="group fixed right-2 bottom-70 rounded-full p-2 bg-white min-w-9 h-9 flex flex-row gap-2 items-center justify-center">
+        {isConnected ?
+          <>
+            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"/>
+            <div className="group-hover:block hidden">Server is Connected</div>
+          </>
+          :
+          <>
+            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse"/>
+            <div className="group-hover:block hidden">Server is disconnected</div>
+          </>
+        }
+      </div>
 
       <div className="fixed right-2 bottom-55">
           <button

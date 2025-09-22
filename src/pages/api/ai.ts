@@ -21,7 +21,7 @@ export default async function handler(
     const busMatch = userMessage.match(/\b([ab]\d{1,3})\b/i);
 
     let systemPromptContent =
-      "You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, estimated arrival times, and related travel information. Always respond clearly, briefly, and completely. Keep answers short but useful.";
+      "You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, estimated arrival times, and related travel information. Always respond clearly, briefly, and completely. Keep answers short but useful, use points.";
 
     if (busMatch) {
       const busId = busMatch[1].toUpperCase();
@@ -55,9 +55,8 @@ export default async function handler(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-chat-v3.1:free",
+          model: "x-ai/grok-4-fast:free",
           messages: [systemPrompt, ...messages],
-          max_tokens: 200,
         }),
       }
     );

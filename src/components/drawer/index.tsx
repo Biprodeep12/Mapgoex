@@ -1,3 +1,4 @@
+import { useBusSimulator } from "@/context/BusSimulatorContext";
 import { useState, useRef, useEffect, useCallback } from "react";
 
 interface BottomDrawerProps {
@@ -11,6 +12,7 @@ const BottomDrawer = ({
   minHeight = 190,
   maxHeight: propMaxHeight,
 }: BottomDrawerProps) => {
+  const { trackingBusStop } = useBusSimulator()
 
   useEffect(() => {
 		const body = document.body;
@@ -30,6 +32,11 @@ const BottomDrawer = ({
   const startY = useRef(0);
   const startHeight = useRef(minHeight);
 
+  useEffect(() => {
+    if (trackingBusStop.active) {
+      setDrawerHeight(minHeight)
+    }
+  },[trackingBusStop])
 
   useEffect(() => {
     const calculated = propMaxHeight ?? window.innerHeight - 100;

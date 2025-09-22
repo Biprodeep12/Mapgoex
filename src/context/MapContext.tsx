@@ -27,15 +27,6 @@ interface MapContextType {
   fetchRoute: (start: [number, number], end: [number, number]) => Promise<void>;
   clearRoute: () => void;
   clearBusSelection: () => void;
-
-  busPos: [number, number] | null;
-  setBusPos: React.Dispatch<React.SetStateAction<[number, number] | null>>;
-  reachedStopIds: Set<string>;
-  setReachedStopIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-  busSpeedKmh: number | null;
-  setBusSpeedKmh: React.Dispatch<React.SetStateAction<number | null>>;
-  reachedStopTimes: Record<string, number>;
-  setReachedStopTimes: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
 
 interface ORSGeoJSON extends FeatureCollection {
@@ -62,12 +53,9 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const [activeLiveBus, setActiveLiveBus] = useState(false);
   const [selectedBus, setSelectedBus] = useState<BusRoute | null>(null);
   const [selectedBusRouteInfo, setSelectedBusRouteInfo] = useState<BusData | null>(null);
-  const [busPos, setBusPos] = useState<[number, number] | null>(null);
-  const [reachedStopIds, setReachedStopIds] = useState<Set<string>>(new Set());
-  const [busSpeedKmh, setBusSpeedKmh] = useState<number | null>(null);
-  const [reachedStopTimes, setReachedStopTimes] = useState<Record<string, number>>({});
 
   const fetchRoute = useCallback(async (start: [number, number], end: [number, number]) => {
+    setUserLocation(null);
     try {
       const res = await axios.post(
         "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
@@ -130,14 +118,6 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     setSelectedBusRouteInfo,
     clearRoute,
     clearBusSelection,
-    busPos,
-    setBusPos,
-    reachedStopIds,
-    setReachedStopIds,
-    busSpeedKmh,
-    setBusSpeedKmh,
-    reachedStopTimes,
-    setReachedStopTimes,
   }), [
     userLocation,
     anonLocation,
@@ -150,10 +130,6 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     fetchBusInfo,
     clearRoute,
     clearBusSelection,
-    busPos,
-    reachedStopIds,
-    busSpeedKmh,
-    reachedStopTimes,
   ]);
 
   return (

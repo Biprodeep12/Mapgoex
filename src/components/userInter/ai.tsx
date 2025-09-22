@@ -18,7 +18,6 @@ export const Ai = ({setOpenAi, openAi}:props) => {
   const [messages, setMessages] = useState<Message[]>([
     { role: "system", content: "Hi! I m Geox. Ask me about bus locations, stops, or travel times." },
   ]);
-  const [fetchingBusDataLoad,setFetchingBusDataLoad] = useState(false)
   const [loading, setLoading] = useState(false);
   const [keyboardHeight,setKeyboardHeight] = useState(0)
 
@@ -34,9 +33,7 @@ export const Ai = ({setOpenAi, openAi}:props) => {
 
   const sendMessage = async () => {
     if (!userInput.trim()) return;
-
-    const busMatch = userInput.match(/\b([ab]\d{1,3})\b/i);
-
+    if (loading) return;
     const newMessages: Message[] = [
       ...messages,
       { role: "user", content: userInput },
@@ -46,7 +43,6 @@ export const Ai = ({setOpenAi, openAi}:props) => {
     setLoading(true);
 
     try {
-      if(busMatch) setFetchingBusDataLoad(true);
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -65,7 +61,6 @@ export const Ai = ({setOpenAi, openAi}:props) => {
       console.error("Error:", err);
     } finally {
       setLoading(false);
-      setFetchingBusDataLoad(false)
     }
   };
 
@@ -79,10 +74,28 @@ export const Ai = ({setOpenAi, openAi}:props) => {
 		};
 	}, []);
 
+  useEffect(() => {
+    if(!openAi) return;
+    const preventDefault = (e: TouchEvent | WheelEvent) => {
+      e.preventDefault();
+    };
+
+    const scrollY = window.scrollY;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+
+    document.addEventListener("touchmove", preventDefault, { passive: false });
+    document.addEventListener("wheel", preventDefault, { passive: false });
+  },[openAi])
+
   return (
     <>
     {openAi&&<div className="bg-white/20 md:hidden fixed z-[19] inset-0 backdrop-blur-sm"></div>}
-    <div className={`fixed md:bottom-5 max-md:top-1/2 md:left-5 left-1/2 max-md:-translate-1/2 p-2 transition-all duration-300 z-20 ${openAi?'translate-y-0 opacity-100 flex':'translate-y-100 opacity-0 hidden'} bg-white w-full max-w-[340px] max-h-[90%] md:max-h-[500px] h-full text-lg drop-shadow-2xl rounded-2xl flex-col gap-2`}>
+    <div className={`fixed md:bottom-5 max-md:top-1/2 md:left-5 left-1/2 max-md:-translate-1/2 p-2 transition-all duration-300 z-20 ${openAi?'translate-y-0 opacity-100 flex':'translate-y-100 opacity-0 hidden'} bg-white w-full max-w-[340px] max-h-[95%] md:max-h-[500px] h-full text-lg drop-shadow-2xl rounded-2xl flex-col gap-2`}>
       <div className="flex flex-row items-center justify-between rounded-xl text-xl bg-blue-100 py-1 px-2">
         <div className="font-semibold text-blue-600">Geox</div>
         <X onClick={()=>setOpenAi(false)} className="p-[1px] rounded-full text-blue-600 hover:bg-blue-50 cursor-pointer" />
@@ -97,10 +110,10 @@ export const Ai = ({setOpenAi, openAi}:props) => {
             }`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
+              className={`rounded-lg ${
                 message.role === "user"
-                  ? "bg-blue-300 text-white"
-                  : "bg-blue-100 text-blue-500"
+                  ? "bg-blue-300 text-white max-w-[80%] p-3"
+                  : "text-blue-500 w-full"
               }`}
             >
               <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -115,7 +128,6 @@ export const Ai = ({setOpenAi, openAi}:props) => {
               <div className="animate-bounce w-1.5 h-1.5 bg-blue-400 rounded-full" style={{animationDelay:'300ms'}}/>
               <Bus/>
             </div>
-            {fetchingBusDataLoad && <div className="text-base text-blue-500 rounded-lg bg-blue-100 px-2">Fetching Bus Data</div>}
           </div>
         )}
 

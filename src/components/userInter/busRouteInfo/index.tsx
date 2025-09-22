@@ -1,9 +1,10 @@
 import { useMapContext } from "@/context/MapContext";
-import { X, Bus, LoaderCircle } from "lucide-react";
-import { memo, useEffect, useState } from "react";
+import { X, Bus, LoaderCircle, EllipsisVertical } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
 import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
 import WeatherIcon from "@/utils/weather";
+import { useBusSimulator } from "@/context/BusSimulatorContext";
 
 interface WeatherData {
   name: string;
@@ -22,8 +23,16 @@ export const BusRouteInfo = memo(() => {
     clearRoute,
     mapCenter
   } = useMapContext();
+  const { unsubscribe, setBusPos, busStopsETA, setBusStopsETA, setRouteId, trackingBusStop, setTrackingBusStop } = useBusSimulator()
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
+
+  const topRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if(!trackingBusStop.active) return;
+    topRef.current?.scrollIntoView({ behavior: "smooth" })
+  },[trackingBusStop])
 
   const fetchWeather = async (lat: number, lon: number) => {
     setLoadingWeather(true);
@@ -53,9 +62,25 @@ export const BusRouteInfo = memo(() => {
     }
   };
 
+  const ClearAllCauses = () => {
+    clearRoute()
+    unsubscribe();
+    setBusPos(null)
+    setBusStopsETA(null)
+    setRouteId('')
+    setWeather(null)
+  }
+
   useEffect(()=>{
+    if(!routeGeoJSON) return;
     fetchWeather(mapCenter.center[1],mapCenter.center[0]);
-  },[mapCenter])
+  },[routeGeoJSON])
+
+  const getBusStopMinutes = (BusStopCount: number|null) => {
+    if (BusStopCount == null) return 0;
+      const minutes = Math.ceil(BusStopCount / 60);
+      return `${minutes} min${minutes > 1 ? "s" : ""}`;
+  }
 
   const totalStops = selectedBusRouteInfo?.busStops?.length || 0;
   const distance = (routeGeoJSON?.features[0]?.properties?.summary?.distance) / 1000
@@ -66,24 +91,74 @@ export const BusRouteInfo = memo(() => {
 
   return (
     <>
-    <div className="fixed md:flex hidden flex-col md:top-5 md:left-5 md:bottom-5 max-md:bottom-0 md:max-w-[400px] w-full bg-white max-md:rounded-t-3xl md:rounded-xl drop-shadow-2xl border border-gray-100 overflow-hidden">
+    <div className="fixed md:flex hidden flex-col md:top-5 md:left-5 md:bottom-5 max-md:bottom-0 md:max-w-[400px] w-full bg-white max-md:rounded-t-3xl md:rounded-xl drop-shadow-2xl border border-gray-100">
+      <button
+        onClick={ClearAllCauses} 
+        className="cursor-pointer w-10 h-11 absolute top-18 -right-10 hover:bg-gray-100 rounded-tr-lg rounded-br-lg bg-white flex items-center justify-center"
+        aria-label="Close route info"
+      >
+        <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+      </button>
 
-      <div className="flex md:hidden justify-center w-full py-2 bg-gray-50">
-        <div className="w-12 h-1.5 rounded-full bg-gray-300" />
+      {trackingBusStop.active && trackingBusStop.busStopID!==null && busStopsETA &&
+      <div className="absolute top-32 left-[410px] min-w-[220px] rounded-xl border border-gray-200 bg-white shadow-lg p-4 flex flex-col gap-3">
+        <div className="flex items-center gap-3">
+          <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
+          <div className="text-lg font-semibold text-gray-800 flex flex-row justify-between items-center w-full">
+            {selectedBus.id}
+            <button onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="cursor-pointer">
+              <X className="w-5 h-5 text-gray-500"/>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-row items-center">
+          <div className="flex flex-col items-center gap-3 ml-[2px]">
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center text-center">
+            <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
+              {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
+            </div>
+            {!busStopsETA[trackingBusStop.busStopID]?.reached?
+              <div className="text-sm text-gray-500">
+                Reaching in <br/>Less than{" "}
+                <span className="font-medium text-gray-700">
+                  {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
+                </span>
+              </div>
+              :
+              <div className="text-sm text-gray-500">Reached</div>
+            }
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
+          <div className="text-base font-medium text-gray-800 text-nowrap">
+            {selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}
+          </div>
+        </div>
       </div>
+      }
       
-      <div className="p-6 pb-4">
+      <div className="pt-6 pl-6 pr-3 pb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-            <div className="text-xl font-bold text-gray-900">{selectedBus.id}</div>
+            <div className="text-2xl font-bold text-gray-900">{selectedBus.id}</div>
+            {/* <button className="rounded-full hover:bg-gray-100 p-2">
+              <Bell className="text-blue-500 w-5 h-5"/>
+            </button> */}
           </div>
           <button 
-            onClick={clearRoute}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
-            aria-label="Close route info"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors group cursor-pointer outline-none"
           >
-            <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+            <EllipsisVertical className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
           </button>
         </div>
         
@@ -111,39 +186,38 @@ export const BusRouteInfo = memo(() => {
     </div>
 
     {weather && (
-      <div className="fixed top-20 p-2 right-5 drop-shadow-2xl bg-blue-200 rounded-lg min-h-[150px] min-w-[200px] hidden md:flex flex-col">
-        {/* <div>
-          Weather in {weather.name}, {weather.country}
-        </div> */}
-        {loadingWeather &&
-          <LoaderCircle className="animate-spin m-auto text-white"/>
-        }
-        <div className="grid grid-cols-2">
-          {weather?.main && <WeatherIcon weatherMain={weather?.main}/>}
-          <div className="text-xl font-bold text-gray-500 self-center">{weather.main}</div>
-        </div>
-        <div className="bg-gray-50 border border-gray-100 rounded-lg p-1 capitalize text-gray-500 font-semibold">{weather.description}</div>
-        {weather?.main==='Rain'||weather?.main==='Fog'||weather?.main==='Drizzle'?
-          <div className="font-semibold text-red-500">
-          Delay of +(2-5mins) Expected
+      <div className="fixed bottom-5 p-2 right-15 drop-shadow-2xl max-md:hidden bg-white rounded-xl">
+        <div className="bg-blue-200 p-2 rounded-lg min-h-[150px] min-w-[200px] flex flex-col">
+          {loadingWeather &&
+            <LoaderCircle className="animate-spin m-auto text-white"/>
+          }
+          <div className="grid grid-cols-2">
+            {weather?.main && <WeatherIcon weatherMain={weather?.main}/>}
+            <div className="text-xl font-bold text-gray-500 self-center">{weather.main}</div>
           </div>
-        :
-          <div className="font-semibold text-green-500">No Delay Expected</div>
-        }
+          <div className="bg-gray-50 border border-gray-100 rounded-lg p-1 capitalize text-gray-500 font-semibold">{weather.description}</div>
+          {weather?.main==='Rain'||weather?.main==='Fog'||weather?.main==='Drizzle'?
+            <div className="font-semibold text-red-500">
+            Delay of +(2-5mins) Expected
+            </div>
+          :
+            <div className="font-semibold text-green-500">No Delay Expected</div>
+          }
+        </div>
       </div>
     )}
 
     <BottomDrawer>
       <div className="flex flex-col w-full overflow-hidden">
 
-        <div className="px-6 pb-4">
+        <div ref={topRef} className="px-6 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
               <h2 className="text-xl font-bold text-gray-900">{selectedBus.id}</h2>
             </div>
             <button 
-              onClick={clearRoute}
+              onClick={ClearAllCauses}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
               aria-label="Close route info"
             >

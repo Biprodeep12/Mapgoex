@@ -4,11 +4,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
-import * as turf from "@turf/turf";
 import Image from "next/image";
-import { isAtStop } from "@/utils/busStops";
-
-type Coord = [number, number];
+import { useBusSimulator } from "@/context/BusSimulatorContext";
 
 export default function MainMap() {
   const { 
@@ -19,18 +16,17 @@ export default function MainMap() {
     setMapCenter,
     selectedBusRouteInfo,
     activeLiveBus,
-    setActiveLiveBus,
-    busPos,
-    setBusPos,
-    reachedStopIds,
-    setReachedStopIds,
-    setBusSpeedKmh,
-    setReachedStopTimes
   } = useMapContext();
-  const mapRef = useRef<MapRef>(null);
+  const { busPos, busStopsETA } = useBusSimulator();
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
-  const prevBusPosRef = useRef<Coord | null>(null);
-  const reachedStopIdsRef = useRef<Set<string>>(new Set());
+  const mapRef = useRef<MapRef>(null);
+  const busFocusRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if(!busFocusRef.current) return;
+    if(!busPos || busPos.length === 0) return;
+    setMapCenter({center: busPos[0].coords,zoom:15})
+  },[busPos,busFocusRef,setMapCenter])
   
   useEffect(() => {
     if (!selectedBus || !routeGeoJSON || !selectedBusRouteInfo) return;
@@ -46,83 +42,6 @@ export default function MainMap() {
   useEffect(()=>{
     mapRef.current?.flyTo(mapCenter);
   },[mapCenter])
-
-  const routeCoords = routeGeoJSON?.features[0]?.geometry?.coordinates;
-
-  useEffect(() => {
-    reachedStopIdsRef.current = reachedStopIds;
-  }, [reachedStopIds]);
-
-  const stopIds = useMemo(() => {
-    return selectedBusRouteInfo?.busStops?.map(s => s.stopId) ?? [];
-  }, [selectedBusRouteInfo]);
-
-  useEffect(() => {
-    if(!routeCoords) return;
-    if (!activeLiveBus || routeCoords.length === 0) return;
-    
-    const line = turf.lineString(routeCoords);
-    const length = turf.length(line, { units: "kilometers" });
-
-    let step = 0;
-    const totalSteps = 200;
-
-    const timer = setInterval(() => {
-      const dist = (length / totalSteps) * step;
-      const point = turf.along(line, dist, { units: "kilometers" });
-      const pos = point.geometry.coordinates as Coord
-      setBusPos(pos);
-      const prev = prevBusPosRef.current;
-      if (prev) {
-        const prevPoint = turf.point(prev);
-        const currPoint = turf.point(pos);
-        const dKm = turf.distance(prevPoint, currPoint, { units: "kilometers" });
-        const seconds = 5;
-        const kmh = seconds > 0 ? (dKm / seconds) * 3600 : 0;
-        setBusSpeedKmh(kmh);
-      }
-      prevBusPosRef.current = pos;
-
-      busStopInfo?.forEach((stop, idx)=>{
-        const stopId = stopIds[idx];
-        if (!stopId) return;
-        if (reachedStopIdsRef.current.has(stopId)) return;
-        if (isAtStop(pos, stop)) {
-          const updated = new Set(reachedStopIdsRef.current);
-          updated.add(stopId);
-          setReachedStopIds(updated);
-          setReachedStopTimes(prev => ({
-            ...prev,
-            [stopId]: Date.now()
-          }));
-        }
-      })
-
-      step++;
-      if (step > totalSteps) {
-        clearInterval(timer);
-        setActiveLiveBus(false);
-      }
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, [activeLiveBus, routeCoords, busStopInfo, stopIds]);
-
-  useEffect(() => {
-    if (!activeLiveBus) {
-      setReachedStopIds(new Set());
-      setBusSpeedKmh(null);
-      setReachedStopTimes({});
-      prevBusPosRef.current = null;
-    }
-  }, [activeLiveBus, setReachedStopIds, setBusSpeedKmh, setReachedStopTimes]);
-
-  useEffect(() => {
-    setReachedStopIds(new Set());
-    setBusSpeedKmh(null);
-    setReachedStopTimes({});
-    prevBusPosRef.current = null;
-  }, [routeCoords, selectedBus, setReachedStopIds, setBusSpeedKmh, setReachedStopTimes]);
 
   const Focus = (coords: [number,number]) => {
     setMapCenter({center:coords,zoom:15})
@@ -149,7 +68,7 @@ export default function MainMap() {
       },
     ],
   }), []);
-
+  
   return (
     <Map
       ref={mapRef}
@@ -187,25 +106,26 @@ export default function MainMap() {
                 <Marker key={indx} longitude={stop[0]} latitude={stop[1]} anchor="bottom">
                     <div 
                         onClick={() => Focus(stop)} 
-                        className={`w-4 h-4 ${selectedBusRouteInfo && reachedStopIds.has(selectedBusRouteInfo?.busStops[indx]?.stopId) ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
+                        className={`w-4 h-4 ${busStopsETA && selectedBusRouteInfo && busStopsETA[indx].reached ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
                 </Marker>
             ))}
 
-            {activeLiveBus && busPos && (
+          {activeLiveBus && busPos && (
               <Marker
-                longitude={busPos[0]}
-                latitude={busPos[1]}
+                longitude={busPos[0].coords[0]}
+                latitude={busPos[0].coords[1]}
                 anchor="bottom"
               >
-                 <Image
-                    src='/bus.png'
-                    width={40}
-                    height={40}
-                    alt="buslogo"
-                    className="rotate-90 z-20"
-                  />
+                <Image
+                  onClick={()=>busFocusRef.current = !busFocusRef.current}
+                  src="/bus.png"
+                  width={40}
+                  height={40}
+                  alt="buslogo"
+                  className="rotate-90 z-20"
+                />
               </Marker>
-            )}
+          )}
         </>
       )}
 

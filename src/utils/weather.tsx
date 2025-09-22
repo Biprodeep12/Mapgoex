@@ -37,6 +37,9 @@ export default function WeatherIcon({ weatherMain }: { weatherMain: string }) {
       case 'Smoke':
         iconSrc = `${WEATHER_ICON_BASE_URL}smoke.svg`;
         break;
+      case 'Thunderstorm':
+        iconSrc = `${WEATHER_ICON_BASE_URL}thunderstorms-rain.svg`;
+        break;
       default:
         console.log('Unknown weather:', weatherMain);
         iconSrc = `${WEATHER_ICON_BASE_URL}unknown.svg`;

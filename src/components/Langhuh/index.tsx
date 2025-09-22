@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Languages, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 interface huhProp {
   langTheme: boolean
@@ -54,8 +54,9 @@ const Langhuh = ({ langTheme,setLangTheme }: huhProp) => {
     <div className={`fixed inset-0 z-20 ${langTheme?'flex':'hidden'} items-center justify-center bg-white/20 backdrop-blur-[2px]`}>
         <div ref={dropdownRef} className="max-w-[320px] w-full bg-white shadow-2xl rounded-2xl p-4">
             <div className="flex justify-between items-center border-b pb-2 mb-3">
-                <div className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                🌐 Select Language
+                <div className="text-lg font-semibold text-gray-800 flex flex-row items-center gap-2">
+                    <Languages className='text-blue-600 w-5 h-5'/> 
+                    Select Language
                 </div>
                 <button
                     onClick={() => setLangTheme(false)}
