@@ -1,5 +1,5 @@
 import { useMapContext } from "@/context/MapContext";
-import { X, Bus, LoaderCircle, EllipsisVertical } from "lucide-react";
+import { X, Bus, LoaderCircle, EllipsisVertical, Share2 } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
@@ -151,9 +151,6 @@ export const BusRouteInfo = memo(() => {
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
             <div className="text-2xl font-bold text-gray-900">{selectedBus.id}</div>
-            {/* <button className="rounded-full hover:bg-gray-100 p-2">
-              <Bell className="text-blue-500 w-5 h-5"/>
-            </button> */}
           </div>
           <button 
             className="p-2 hover:bg-gray-100 rounded-full transition-colors group cursor-pointer outline-none"
@@ -210,19 +207,27 @@ export const BusRouteInfo = memo(() => {
     <BottomDrawer>
       <div className="flex flex-col w-full overflow-hidden">
 
-        <div ref={topRef} className="px-6 pb-4">
+        <div ref={topRef} className="px-4 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-              <h2 className="text-xl font-bold text-gray-900">{selectedBus.id}</h2>
+              <div className="text-[22px] font-bold text-gray-900">{selectedBus.id}</div>
             </div>
-            <button 
-              onClick={ClearAllCauses}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors group"
-              aria-label="Close route info"
-            >
-              <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
-            </button>
+            <div className="flex flex-row gap-4 items-center">
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors group bg-gray-100"
+                aria-label="Close route info"
+              >
+                <Share2 className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+              </button>
+              <button 
+                onClick={ClearAllCauses}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors group bg-gray-100"
+                aria-label="Close route info"
+              >
+                <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+              </button>
+            </div>
           </div>
           
           <div className="flex flex-row text-xl font-semibold">

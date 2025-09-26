@@ -9,7 +9,7 @@ interface BottomDrawerProps {
 
 const BottomDrawer = ({
   children,
-  minHeight = 190,
+  minHeight = 140,
   maxHeight: propMaxHeight,
 }: BottomDrawerProps) => {
   const { trackingBusStop } = useBusSimulator()

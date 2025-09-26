@@ -1,5 +1,5 @@
 import { useMapContext } from "@/context/MapContext";
-import { Loader2, LocateFixed, Search, Sparkles, User } from "lucide-react";
+import { Loader2, LocateFixed, Search, Sparkles, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
 import AuthPage, { Dropdown } from "../Auth";
@@ -109,7 +109,7 @@ const UserInter = () => {
     setActiveLiveBus,
     selectedBusRouteInfo
   } = useMapContext();
-  const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop } = useBusSimulator();
+  const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop, setTrackingBusStop } = useBusSimulator();
   const { user } = useAuth();
 
   const [searchInput, setSearchInput] = useState('')
@@ -322,26 +322,16 @@ const UserInter = () => {
           </div>
         }
         {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
-        <div className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-col">
-          <div className="flex flex-row w-full items-center justify-between h-6 px-5">
-            <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="w-3 h-3 rounded-full border-2 border-blue-600 bg-white"></div>
-            <div className="min-w-4 h-4 rounded-full border-2 border-blue-600 bg-blue-300"></div>
-          </div>
-          <div className="grid grid-cols-[70px_auto_70px] justify-between items-center text-center">
-            <div className="text-lg font-semibold text-gray-800">{selectedBus.id}</div>
-            <div className="flex flex-col items-center">
+        <div className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
+          <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
+            <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
+            <div className="flex flex-col">
               <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
                 {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
               </div>
               {!busStopsETA[trackingBusStop.busStopID]?.reached?
-                <div className="text-sm text-gray-500">
-                  Reaching in <br/>Less than{" "}
+                <div className="text-lg text-gray-500">
+                  Reaching in Less than{" "}
                   <span className="font-medium text-gray-700">
                     {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
                   </span>
@@ -350,9 +340,9 @@ const UserInter = () => {
                 <div className="text-sm text-gray-500">Reached</div>
               }
             </div>
-            <div className="text-base font-semibold text-gray-800">
-              {selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}
-            </div>
+          </div>
+          <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
+            <X className="h-6 w-6 shrink-0 text-gray-600"/>
           </div>
         </div>
         }

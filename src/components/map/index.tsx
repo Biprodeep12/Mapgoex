@@ -17,7 +17,7 @@ export default function MainMap() {
     selectedBusRouteInfo,
     activeLiveBus,
   } = useMapContext();
-  const { busPos, busStopsETA } = useBusSimulator();
+  const { busPos, busStopsETA, setTrackingBusStop } = useBusSimulator();
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
   const mapRef = useRef<MapRef>(null);
   const busFocusRef = useRef<boolean>(false);
@@ -45,6 +45,11 @@ export default function MainMap() {
 
   const Focus = (coords: [number,number]) => {
     setMapCenter({center:coords,zoom:15})
+  }
+
+  const onClickStop = (coords:[number,number],idx:number) => {
+    setMapCenter({center: coords,zoom: 15})
+    setTrackingBusStop({busStopID: idx, active: true})
   }
 
   const mapStyle = useMemo(() => ({
@@ -105,7 +110,7 @@ export default function MainMap() {
             {busStopInfo?.map((stop, indx) => (
                 <Marker key={indx} longitude={stop[0]} latitude={stop[1]} anchor="bottom">
                     <div 
-                        onClick={() => Focus(stop)} 
+                        onClick={() => onClickStop([stop[0],stop[1]],indx)}
                         className={`w-4 h-4 ${busStopsETA && selectedBusRouteInfo && busStopsETA[indx].reached ? 'bg-blue-300' : 'bg-blue-500'} rounded-full border-2 border-white shadow-md`}></div>
                 </Marker>
             ))}
