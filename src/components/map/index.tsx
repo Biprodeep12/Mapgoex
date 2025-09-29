@@ -16,6 +16,8 @@ export default function MainMap() {
     setMapCenter,
     selectedBusRouteInfo,
     activeLiveBus,
+    anonRouteGeoJSON,
+    anonLocation
   } = useMapContext();
   const { busPos, busStopsETA, setTrackingBusStop } = useBusSimulator();
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
@@ -90,6 +92,13 @@ export default function MainMap() {
 
       {userLocation && (
         <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="bottom">
+          <div className="w-4.5 h-4.5 border-4 border-blue-500 bg-white rounded-full"></div>
+        </Marker>
+      )}
+
+      {anonLocation && (
+        <Marker longitude={anonLocation[0]} latitude={anonLocation[1]} anchor="bottom">
+          <div className="w-4.5 h-4.5 border-4 border-blue-500 bg-white rounded-full"></div>
         </Marker>
       )}
 
@@ -135,9 +144,9 @@ export default function MainMap() {
       )}
 
       {routeGeoJSON && (
-        <Source id="route" type="geojson" data={routeGeoJSON}>
+        <Source id="route1" type="geojson" data={routeGeoJSON}>
           <Layer
-            id="route-line"
+            id="route-line1"
             type="line"
             paint={{
               "line-color": "#0074D9",
@@ -146,6 +155,20 @@ export default function MainMap() {
           />
         </Source>
       )}
+
+      {anonRouteGeoJSON && (
+        <Source id="route2" type="geojson" data={anonRouteGeoJSON}>
+          <Layer
+            id="route-line2"
+            type="line"
+            paint={{
+              "line-color": "#d90000",
+              "line-width": 6,
+            }}
+          />
+        </Source>
+      )}
+
     </Map>
   );
 }

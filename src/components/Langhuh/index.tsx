@@ -51,8 +51,8 @@ const Langhuh = ({ langTheme,setLangTheme }: huhProp) => {
     }, []);
 
   return (
-    <div className={`fixed inset-0 z-20 ${langTheme?'flex':'hidden'} items-center justify-center bg-white/20 backdrop-blur-[2px]`}>
-        <div ref={dropdownRef} className="max-w-[320px] w-full bg-white shadow-2xl rounded-2xl p-4">
+    <div className={`fixed inset-0 z-[1000] ${langTheme?'flex':'hidden'} items-center justify-center bg-white/20 backdrop-blur-[2px]`}>
+        <div ref={dropdownRef} className="max-w-[355px] w-[90%] bg-white shadow-2xl rounded-2xl p-4">
             <div className="flex justify-between items-center border-b pb-2 mb-3">
                 <div className="text-lg font-semibold text-gray-800 flex flex-row items-center gap-2">
                     <Languages className='text-blue-600 w-5 h-5'/> 

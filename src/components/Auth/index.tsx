@@ -132,8 +132,8 @@ const AuthPage = ({setAuthOpen}:propsAuth) => {
   };
 
   return (
-    <div className='fixed inset-0 z-20 flex items-center justify-center bg-white/20 backdrop-blur-[2px]'>
-      <div ref={dropdownRef} className='shadow-xl flex flex-col bg-white px-5 py-7 border transition-all duration-300 border-[#ccc] rounded-2xl items-center max-w-[400px] w-full'>
+    <div className='fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-[2px]'>
+      <div ref={dropdownRef} className='shadow-xl flex flex-col bg-white px-5 py-7 border transition-all duration-300 border-[#ccc] rounded-2xl items-center max-w-[400px] w-[95%]'>
         <div className='text-3xl mb-4 font-bold'>
           {isRegister ? 'Register' : 'Login'}
         </div>

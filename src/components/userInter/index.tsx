@@ -1,5 +1,5 @@
 import { useMapContext } from "@/context/MapContext";
-import { Loader2, LocateFixed, Search, Sparkles, User, X } from "lucide-react";
+import { Loader2, LocateFixed, MapPin, MapPinned, Search, Sparkles, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
 import AuthPage, { Dropdown } from "../Auth";
@@ -8,6 +8,7 @@ import Image from "next/image";
 import Langhuh from "../Langhuh";
 import { Ai } from "./ai";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
+import { GetRoute } from "./getRoute";
 
 interface SearchData {
   coords: [number, number],
@@ -31,6 +32,15 @@ type busDataType = {
   NameB: string,
   busStops: string[],
   forward: boolean,
+}
+
+type destinationType = {
+  start: string,
+  A: [number,number]|null,
+  startActive: boolean,
+  finish: string,
+  B: [number,number]|null,
+  finishActive: boolean
 }
 
 const allBusData:busDataType[] = [
@@ -107,7 +117,10 @@ const UserInter = () => {
     setSelectedBus,
     selectedBus,
     setActiveLiveBus,
-    selectedBusRouteInfo
+    selectedBusRouteInfo,
+    setAnonRouteGeoJSON,
+    setAnonLocation,
+    anonLocation
   } = useMapContext();
   const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop, setTrackingBusStop } = useBusSimulator();
   const { user } = useAuth();
@@ -121,6 +134,15 @@ const UserInter = () => {
   const [langTheme,setLangTheme] = useState(false)
   const [openDropUser, setOpenDropUser] = useState(false);
   const [openAi, setOpenAi] = useState(false)
+  const [openLocation, setOpenLocation] = useState(false)
+  const [destinationData, setDestinationData] = useState<destinationType>({
+    start: '',
+    A: null, 
+    startActive: false,
+    finish: '',
+    B: null,
+    finishActive: false
+  })
 
   const getBusStopMinutes = (BusStopCount: number|null) => {
     if (BusStopCount == null) return 0;
@@ -133,6 +155,7 @@ const UserInter = () => {
         setMapCenter({center: [userLocation[0],userLocation[1]],zoom: 15})
         return;
     }
+
     if (!("geolocation" in navigator)) {
       alert("Geolocation is not supported by your browser.");
       return;
@@ -151,7 +174,15 @@ const UserInter = () => {
         }
       }
     )
+    setOpenLocation(false)
   };
+
+  const handleCloseDest = () =>{
+    setDestinationData({start:'',A:null,startActive:false,finish:'',B:null,finishActive:false});
+    setAnonRouteGeoJSON(null);
+    setUserLocation(null);
+    setAnonLocation(null);
+  }
 
   const getCoordsFromLocationORS = async () => {
     if (!searchInput.trim()) return;
@@ -232,7 +263,7 @@ const UserInter = () => {
   return (
     <>
       <div className="fixed top-5 left-5 max-[500px]:left-1/2 max-[500px]:-translate-x-1/2 max-[500px]:w-[90%] flex flex-col items-center gap-3">
-        <div className="flex flex-row gap-2.5 items-center justify-between w-full">
+        <div className={`${destinationData.finishActive||destinationData.startActive?'hidden':'flex'} flex-row gap-2.5 items-center justify-between w-full`}>
           <div className="rounded-4xl px-4 py-2 bg-white drop-shadow-2xl flex flex-row gap-3 items-center min-w-0">
             {loadingSearch? <Loader2 className="w-10 h-10 animate-spin p-2 text-blue-500 shrink-0"/> : <Search onClick={handleSearch} className="w-10 h-10 text-gray-400 p-2 cursor-pointer rounded-full hover:bg-gray-100"/>}
               <input
@@ -264,36 +295,90 @@ const UserInter = () => {
             {openDropUser && <Dropdown setLangTheme={setLangTheme} setAuthOpen={setAuthOpen} setOpenDropUser={setOpenDropUser}/>}
           </div>
         </div>
+
+        {(destinationData.finishActive || destinationData.startActive) &&
+          <>
+            <div className="bg-white text-lg w-full rounded-2xl drop-shadow-2xl p-3 flex flex-col items-center gap-2">
+              <div className="flex flex-row items-center w-full gap-3">
+                <div className="flex-1 flex flex-col gap-1.5">
+                  {destinationData.finishActive &&
+                    <div className="flex flex-row gap-2 items-center">
+                      <LocateFixed className="text-blue-600 w-6 h-6"/>
+                      <input 
+                        value={destinationData.start}
+                        onChange={(e)=>setDestinationData(prev=> ({...prev,start:e.target.value}))}
+                        onFocus={()=>setDestinationData(prev=> ({...prev,startActive:false,finishActive:true}))}
+                        placeholder="Choose start location" 
+                        className="flex-1 border-2 border-[#ccc] h-10 outline-none rounded-lg py-1 px-2"/>
+                    </div>
+                  }
+                  {destinationData.startActive &&
+                    <div className="flex flex-row gap-2 items-center">
+                      <MapPin className="text-red-400 w-6 h-6"/>
+                      <input
+                        value={destinationData.finish}
+                        onChange={(e)=>setDestinationData(prev=> ({...prev,finish:e.target.value}))}
+                        onFocus={()=>setDestinationData(prev=> ({...prev,finishActive:false,startActive:true}))} 
+                        placeholder="Choose destination" 
+                        className="flex-1 border-2 border-[#ccc] h-10 outline-none rounded-lg py-1 px-2"/>
+                    </div>
+                  }
+                </div>
+                <div onClick={handleCloseDest} className="flex items-center justify-center">
+                  <X className="h-6 w-6 shrink-0 text-gray-600"/>
+                </div>
+              </div>
+              {destinationData.start!=='' && destinationData.finish!==''&&
+                <GetRoute/>
+              }
+            </div>
+            {((destinationData.finishActive&&!destinationData.startActive)||(destinationData.startActive&&!destinationData.finishActive)) &&
+            <button onClick={()=>{
+              if(userLocation==null){
+                setOpenLocation(true);
+                setDestinationData(prev=> ({...prev,start:'Your Location',startActive:true,finishActive:true}));
+              } else {
+                handleGetLocation();
+                setDestinationData(prev=> ({...prev,start:'Your Location',startActive:true,finishActive:true}));
+              }
+              }} className="bg-white text-xl gap-2 cursor-pointer flex items-center drop-shadow-2xl w-full rounded-2xl pl-4 py-3">
+              <MapPinned className="text-blue-500 w-5 h-5"/>
+              Your Location
+            </button>
+            }
+          </>
+        }
         
         {searchInput && busSearchResults.length > 0 &&
-        <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2 min-[500px]:max-w-[340px]">
-          <div className="font-semibold text-blue-600 flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            Bus Routes ({busSearchResults.length})
-          </div>
-          {busSearchResults.map((bus,indx)=>(
-            <button 
-              key={indx} 
-              onClick={() => handleBusClick(bus)}
-              disabled={loadingRoute}
-              className="text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="font-bold text-blue-700 text-xl">{bus.id}</div>
-              <div className="text-sm text-gray-600 mt-1">
-                <span className="font-medium">From:</span> {bus.NameA}
-              </div>
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">To:</span> {bus.NameB}
-              </div>
-              {loadingRoute && (
-                <div className="flex items-center gap-2 mt-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                  <span className="text-xs text-blue-500">Loading route...</span>
+          <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2 min-[500px]:max-w-[340px]">
+            <div className="font-semibold text-blue-600 flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              Bus Routes ({busSearchResults.length})
+            </div>
+            {busSearchResults.map((bus,indx)=>(
+              <button
+                key={indx} 
+                onClick={() => handleBusClick(bus)}
+                disabled={loadingRoute}
+                className="text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="font-bold text-blue-700 text-xl">{bus.id}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">From:</span> {bus.NameA}
                 </div>
-              )}
-            </button>
-          ))}
-        </div>}
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">To:</span> {bus.NameB}
+                </div>
+                {loadingRoute && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <span className="text-xs text-blue-500">Loading route...</span>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        }
 
         {searchInput && busSearchResults.length === 0 &&
           <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3">
@@ -322,29 +407,40 @@ const UserInter = () => {
           </div>
         }
         {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
-        <div className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
-          <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
-            <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
-            <div className="flex flex-col">
-              <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
-                {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
-              </div>
-              {!busStopsETA[trackingBusStop.busStopID]?.reached?
-                <div className="text-lg text-gray-500">
-                  Reaching in Less than{" "}
-                  <span className="font-medium text-gray-700">
-                    {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
-                  </span>
+          <div 
+            onClick={()=>{
+              const busStopID = trackingBusStop.busStopID!;
+              setAnonLocation(selectedBusRouteInfo?.busStops[busStopID].coords??null);
+              setDestinationData((prev)=>({
+                ...prev,
+                finish: selectedBusRouteInfo?.busStops[busStopID].name ?? '',
+                B:selectedBusRouteInfo?.busStops[busStopID].coords??null,
+                startActive: true,
+                finishActive: true
+              }))}}
+              className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
+            <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
+              <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
+              <div className="flex flex-col">
+                <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
+                  {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
                 </div>
-                :
-                <div className="text-sm text-gray-500">Reached</div>
-              }
+                {!busStopsETA[trackingBusStop.busStopID]?.reached?
+                  <div className="text-lg text-gray-500">
+                    Reaching in Less than{" "}
+                    <span className="font-medium text-gray-700">
+                      {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
+                    </span>
+                  </div>
+                  :
+                  <div className="text-sm text-gray-500">Reached</div>
+                }
+              </div>
+            </div>
+            <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
+              <X className="h-6 w-6 shrink-0 text-gray-600"/>
             </div>
           </div>
-          <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
-            <X className="h-6 w-6 shrink-0 text-gray-600"/>
-          </div>
-        </div>
         }
 
       </div>
@@ -386,12 +482,59 @@ const UserInter = () => {
 
       <div className="fixed right-2 bottom-55">
           <button
-              onClick={handleGetLocation}
+              onClick={()=>{
+                if(userLocation==null){
+                  setOpenLocation(true)
+                } else {
+                  handleGetLocation();
+                }}}
               className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
           >
               <LocateFixed className="w-5 h-5"/>
           </button>
       </div>
+      {openLocation &&
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-[2px]">
+          <div className="flex flex-col gap-2 max-w-[355px] w-[90%] bg-white shadow-2xl rounded-2xl p-4 border-2 border-blue-200">
+            <div className="flex flex-row items-center justify-between">
+              <div className="text-lg font-semibold text-gray-800 flex flex-row items-center gap-2">
+                <LocateFixed className='text-blue-600 w-5 h-5'/>
+                Live Location
+              </div>
+              <button
+                  onClick={() => setOpenLocation(false)}
+                  className="p-1 cursor-pointer rounded-full hover:bg-gray-200 transition"
+              >
+                  <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <div className="text-lg text-gray-800">To continue, your device will need to use Location Accuracy</div>
+              <div className="text-base text-gray-800">The following settings should be on:</div>
+              <div className="flex flex-row items-center gap-1 pl-2">
+                <MapPin className="text-blue-600 w-5 h-5 shrink-0"/>
+                Device location
+              </div>
+              <div className="flex flex-row items-center gap-1 pl-2">
+                <LocateFixed className="text-blue-600 w-5 h-5 shrink-0"/>
+                Location Accuracy
+              </div>          
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button
+                onClick={()=>setOpenLocation(false)} 
+                className="rounded-lg border-2 border-blue-500 py-2 cursor-pointer text-blue-500 font-semibold">
+                No Thanks
+              </button>
+              <button 
+                onClick={handleGetLocation} 
+                className="rounded-lg border-2 border-blue-500 py-2 cursor-pointer bg-blue-500 text-white font-semibold">
+                Turn On
+              </button>
+            </div>
+          </div>
+        </div>
+      }
       <BusRouteInfo/>
     </>
   );

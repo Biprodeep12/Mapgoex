@@ -17,6 +17,8 @@ interface MapContextType {
   selectedBusRouteInfo: BusData | null;
   setSelectedBusRouteInfo: React.Dispatch<React.SetStateAction<BusData | null>>;
   
+  anonRouteGeoJSON: ORSGeoJSON | null;
+  setAnonRouteGeoJSON: React.Dispatch<React.SetStateAction<ORSGeoJSON | null>>;
   routeGeoJSON: ORSGeoJSON | null;
   setRouteGeoJSON: React.Dispatch<React.SetStateAction<ORSGeoJSON | null>>;
   
@@ -50,6 +52,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const [anonLocation, setAnonLocation] = useState<[number, number] | null>(null);
   
   const [routeGeoJSON, setRouteGeoJSON] = useState<ORSGeoJSON | null>(null);
+  const [anonRouteGeoJSON, setAnonRouteGeoJSON] = useState<ORSGeoJSON | null>(null)
   const [activeLiveBus, setActiveLiveBus] = useState(false);
   const [selectedBus, setSelectedBus] = useState<BusRoute | null>(null);
   const [selectedBusRouteInfo, setSelectedBusRouteInfo] = useState<BusData | null>(null);
@@ -104,6 +107,8 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     setUserLocation,
     anonLocation,
     setAnonLocation,
+    anonRouteGeoJSON,
+    setAnonRouteGeoJSON,
     routeGeoJSON,
     setRouteGeoJSON,
     fetchRoute,
@@ -121,6 +126,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   }), [
     userLocation,
     anonLocation,
+    anonRouteGeoJSON,
     routeGeoJSON,
     selectedBus,
     activeLiveBus,
