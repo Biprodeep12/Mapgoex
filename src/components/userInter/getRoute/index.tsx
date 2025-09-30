@@ -1,46 +1,61 @@
 import { useMapContext } from "@/context/MapContext";
 import axios from "axios";
 import { CarFront, Footprints, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const ROUTE_PROFILES = [
   { id: "foot-walking", label: "Walking", icon: Footprints },
   { id: "driving-car", label: "Driving", icon: CarFront },
 ];
 
-export const GetRoute = () => {
+const GetRoute = () => {
   const { userLocation, setAnonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
   const [loading, setLoading] = useState(false);
   const [activeProfile, setActiveProfile] = useState<string>("");
+  const ContentRef = useRef<{ userLocation: [number, number]; anonLocation: [number, number];profile: string } | null>(null)
 
-  const fetchRoute = async (profile: string) => {
-    if (!userLocation || !anonLocation) return;
+  const fetchRoute = useCallback(
+    async (profile: string) => {
+      if (!userLocation || !anonLocation) return;
+      if(JSON.stringify(ContentRef.current) === JSON.stringify({userLocation,anonLocation,profile})) return;
 
-    setLoading(true);
-    setActiveProfile(profile);
+      ContentRef.current = {userLocation,anonLocation,profile};
 
-    try {
+      setLoading(true);
+      setActiveProfile(profile);
+
+      try {
         const res = await axios.post(
-            `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
-            { coordinates: [userLocation, anonLocation] },
-            {
+          `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
+          { coordinates: [userLocation, anonLocation] },
+          {
             headers: {
-                Authorization:
+              Authorization:
                 "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczZGM4NTFmMDVkOTRiOTRhNzFmNTBlMmRhODI0OThhIiwiaCI6Im11cm11cjY0In0=",
-                "Content-Type": "application/json",
+              "Content-Type": "application/json",
             },
-            }
+          }
         );
+
         setAnonRouteGeoJSON(res.data);
+        console.log(res.data);
+        
+
         const centerLng = (userLocation[0] + anonLocation[0]) / 2;
         const centerLat = (userLocation[1] + anonLocation[1]) / 2;
-        setMapCenter({center: [centerLng, centerLat],zoom:14})
-    } catch (err) {
+
+        setMapCenter({
+          center: [centerLng, centerLat],
+          zoom: 14,
+        });
+      } catch (err) {
         console.error("Error fetching route:", err);
-    } finally {
-         setLoading(false);
-    }
-  };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userLocation, anonLocation]
+  );
 
   return (
     <div className="grid grid-cols-2 gap-2 w-full">
@@ -72,3 +87,5 @@ export const GetRoute = () => {
     </div>
   );
 };
+
+export default GetRoute;

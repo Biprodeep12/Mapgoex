@@ -21,7 +21,8 @@ export const BusRouteInfo = memo(() => {
     routeGeoJSON, 
     selectedBusRouteInfo,
     clearRoute,
-    mapCenter
+    mapCenter,
+    anonRouteGeoJSON
   } = useMapContext();
   const { unsubscribe, setBusPos, busStopsETA, setBusStopsETA, setRouteId, trackingBusStop, setTrackingBusStop } = useBusSimulator()
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -88,6 +89,8 @@ export const BusRouteInfo = memo(() => {
   if (!selectedBus || !routeGeoJSON) return null;
 
   if (!routeGeoJSON || !selectedBusRouteInfo) return null;
+
+  if (anonRouteGeoJSON) return null;
 
   return (
     <>

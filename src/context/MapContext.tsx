@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useMemo } from "react";
-import type { FeatureCollection, LineString, Feature } from "geojson";
+import type { FeatureCollection, LineString, Feature  } from "geojson";
 import axios from "axios";
 import { BusData, BusRoute } from "@/types/bus";
 
@@ -31,8 +31,15 @@ interface MapContextType {
   clearBusSelection: () => void;
 }
 
+interface ORSMetadata {
+  query: {
+    profile: string;
+  };
+}
+
 interface ORSGeoJSON extends FeatureCollection {
   features: Feature<LineString>[];
+  metadata: ORSMetadata;
 }
 
 interface MapCenterType {

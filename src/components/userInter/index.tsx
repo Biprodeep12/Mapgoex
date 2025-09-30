@@ -8,7 +8,8 @@ import Image from "next/image";
 import Langhuh from "../Langhuh";
 import { Ai } from "./ai";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
-import { GetRoute } from "./getRoute";
+import GetRoute from "./getRoute";
+import { DrawerDest } from "./getRoute/drawerDest";
 
 interface SearchData {
   coords: [number, number],
@@ -34,7 +35,7 @@ type busDataType = {
   forward: boolean,
 }
 
-type destinationType = {
+export type destinationType = {
   start: string,
   A: [number,number]|null,
   startActive: boolean,
@@ -328,7 +329,7 @@ const UserInter = () => {
                   <X className="h-6 w-6 shrink-0 text-gray-600"/>
                 </div>
               </div>
-              {destinationData.start!=='' && destinationData.finish!==''&&
+              {destinationData.start!=='' && destinationData.finish!==''&& userLocation && anonLocation &&
                 <GetRoute/>
               }
             </div>
@@ -444,6 +445,8 @@ const UserInter = () => {
         }
 
       </div>
+
+      <DrawerDest destinationData={destinationData} setDestinationData={setDestinationData}/>
 
       <Ai setOpenAi={setOpenAi} openAi={openAi}/>
 
