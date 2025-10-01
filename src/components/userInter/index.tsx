@@ -1,6 +1,6 @@
 import { useMapContext } from "@/context/MapContext";
 import { Loader2, LocateFixed, MapPin, MapPinned, Search, Sparkles, User, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
 import AuthPage, { Dropdown } from "../Auth";
 import { useAuth } from "@/context/userContext";
@@ -10,6 +10,7 @@ import { Ai } from "./ai";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import GetRoute from "./getRoute";
 import { DrawerDest } from "./getRoute/drawerDest";
+import HomeDrawer from "../HomeDrawer";
 
 interface SearchData {
   coords: [number, number],
@@ -109,10 +110,10 @@ const allBusData:busDataType[] = [
 ];
 
 const UserInter = () => {
-  const { 
-    setUserLocation, 
-    userLocation, 
-    setMapCenter, 
+  const {
+    setUserLocation,
+    userLocation,
+    setMapCenter,
     fetchRoute,
     fetchBusInfo,
     setSelectedBus,
@@ -121,40 +122,42 @@ const UserInter = () => {
     selectedBusRouteInfo,
     setAnonRouteGeoJSON,
     setAnonLocation,
-    anonLocation
+    anonLocation,
   } = useMapContext();
+
   const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop, setTrackingBusStop } = useBusSimulator();
   const { user } = useAuth();
 
-  const [searchInput, setSearchInput] = useState('')
-  const [searchData, setSearchData] = useState<SearchData[]>([])
-  const [busSearchResults, setBusSearchResults] = useState<busDataType[]>([])
+  const [searchInput, setSearchInput] = useState("");
+  const [searchData, setSearchData] = useState<SearchData[]>([]);
+  const [busSearchResults, setBusSearchResults] = useState<busDataType[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [loadingRoute, setLoadingRoute] = useState(false);
-  const [authOpen,setAuthOpen] = useState(false)
-  const [langTheme,setLangTheme] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false);
+  const [langTheme, setLangTheme] = useState(false);
   const [openDropUser, setOpenDropUser] = useState(false);
-  const [openAi, setOpenAi] = useState(false)
-  const [openLocation, setOpenLocation] = useState(false)
+  const [openAi, setOpenAi] = useState(false);
+  const [openLocation, setOpenLocation] = useState(false);
+
   const [destinationData, setDestinationData] = useState<destinationType>({
-    start: '',
-    A: null, 
+    start: "",
+    A: null,
     startActive: false,
-    finish: '',
+    finish: "",
     B: null,
-    finishActive: false
-  })
+    finishActive: false,
+  });
 
-  const getBusStopMinutes = (BusStopCount: number|null) => {
-    if (BusStopCount == null) return 0;
-      const minutes = Math.ceil(BusStopCount / 60);
-      return `${minutes} min${minutes > 1 ? "s" : ""}`;
-  }
+  const getBusStopMinutes = useCallback((seconds: number | null) => {
+    if (seconds == null) return "0 min";
+    const minutes = Math.ceil(seconds / 60);
+    return `${minutes} min${minutes > 1 ? "s" : ""}`;
+  }, []);
 
-  const handleGetLocation = () => {
-    if(userLocation){
-        setMapCenter({center: [userLocation[0],userLocation[1]],zoom: 15})
-        return;
+  const handleGetLocation = useCallback(() => {
+    if (userLocation) {
+      setMapCenter({ center: userLocation, zoom: 15 });
+      return;
     }
 
     if (!("geolocation" in navigator)) {
@@ -164,8 +167,9 @@ const UserInter = () => {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setUserLocation([pos.coords.longitude, pos.coords.latitude]);
-        setMapCenter({center: [pos.coords.longitude,pos.coords.latitude],zoom: 15})
+        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+        setUserLocation(coords);
+        setMapCenter({ center: coords, zoom: 15 });
       },
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
@@ -174,93 +178,105 @@ const UserInter = () => {
           console.error("Geolocation error:", err);
         }
       }
-    )
-    setOpenLocation(false)
-  };
+    );
+    setOpenLocation(false);
+  }, [userLocation, setUserLocation, setMapCenter]);
 
-  const handleCloseDest = () =>{
-    setDestinationData({start:'',A:null,startActive:false,finish:'',B:null,finishActive:false});
+  const handleCloseDest = useCallback(() => {
+    setDestinationData({ start: "", A: null, startActive: false, finish: "", B: null, finishActive: false });
     setAnonRouteGeoJSON(null);
     setUserLocation(null);
     setAnonLocation(null);
-  }
+  }, [setAnonRouteGeoJSON, setUserLocation, setAnonLocation]);
 
-  const getCoordsFromLocationORS = async () => {
+  const selectedBusClick = useCallback(() => {
+    const busStopID = trackingBusStop.busStopID!;
+    if (destinationData.finish === selectedBusRouteInfo?.busStops[busStopID].name) return;
+    setAnonRouteGeoJSON(null);
+    setAnonLocation(selectedBusRouteInfo?.busStops[busStopID].coords ?? null);
+    setDestinationData((prev) => ({
+      ...prev,
+      finish: selectedBusRouteInfo?.busStops[busStopID].name ?? "",
+      B: selectedBusRouteInfo?.busStops[busStopID].coords ?? null,
+      startActive: true,
+      finishActive: true,
+    }));
+  }, [trackingBusStop, selectedBusRouteInfo, destinationData.finish, setAnonRouteGeoJSON, setAnonLocation]);
+
+  const getCoordsFromLocationORS = useCallback(async () => {
     if (!searchInput.trim()) return;
-    
-    try{
+    try {
       setLoadingSearch(true);
       const url = `https://api.openrouteservice.org/geocode/search?api_key=eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczZGM4NTFmMDVkOTRiOTRhNzFmNTBlMmRhODI0OThhIiwiaCI6Im11cm11cjY0In0=&text=${encodeURIComponent(searchInput)}&size=5`;
-
       const res = await fetch(url);
       const data = await res.json();
-
-      if (data.features && data.features.length > 0) {
-        const results: SearchData[] = (data.features as Feature[]).map((feature: Feature) => ({
-          coords: feature.geometry.coordinates,
-          label: feature.properties.label,
-        }));      
+      if (data.features?.length > 0) {
+        const results: SearchData[] = data.features.map((f: Feature) => ({
+          coords: f.geometry.coordinates,
+          label: f.properties.label,
+        }));
         setSearchData(results);
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err);
     } finally {
       setLoadingSearch(false);
     }
-  };
+  }, [searchInput]);
 
-  const handleSearch = () => {
+  const handleSearch = useCallback(() => {
     const query = searchInput.trim().toLowerCase();
     if (!query) return;
-
-    const filteredResults = allBusData.filter(bus =>
-      bus.id.toLowerCase().includes(query) ||
-      bus.NameA.toLowerCase().includes(query) ||
-      bus.NameB.toLowerCase().includes(query) ||
-      bus.busStops.some(element => element.toLowerCase().includes(query)))
-
-    setBusSearchResults(filteredResults);
-
+    setBusSearchResults(
+      allBusData.filter(
+        (bus) =>
+          bus.id.toLowerCase().includes(query) ||
+          bus.NameA.toLowerCase().includes(query) ||
+          bus.NameB.toLowerCase().includes(query) ||
+          bus.busStops.some((stop) => stop.toLowerCase().includes(query))
+      )
+    );
     getCoordsFromLocationORS();
-  };
+  }, [searchInput, getCoordsFromLocationORS]);
 
-  const handleBusClick = async (bus: busDataType) => {
-    setSelectedBus(bus);
-    setLoadingRoute(true);
-    setRouteId(bus.id)
-    
-    try {
-      await fetchRoute(bus.A, bus.B);
-      await fetchBusInfo(bus.id);
-      subscribe();
-      setActiveLiveBus(true);
-      const centerLng = (bus.A[0] + bus.B[0]) / 2;
-      const centerLat = (bus.A[1] + bus.B[1]) / 2;
-      setMapCenter({ center: [centerLng, centerLat], zoom: 12 });
-      setSearchInput('');
-      setBusSearchResults([]);
-      setSearchData([]);
-    } catch (error) {
-      console.error('Error fetching route:', error);
-    } finally {
-      setLoadingRoute(false);
-    }
-  };
+  const handleBusClick = useCallback(
+    async (bus: busDataType) => {
+      setSelectedBus(bus);
+      setLoadingRoute(true);
+      setRouteId(bus.id);
+
+      try {
+        await fetchRoute(bus.A, bus.B);
+        await fetchBusInfo(bus.id);
+        subscribe();
+        setActiveLiveBus(true);
+        setMapCenter({ center: [(bus.A[0] + bus.B[0]) / 2, (bus.A[1] + bus.B[1]) / 2], zoom: 12 });
+        setSearchInput("");
+        setBusSearchResults([]);
+        setSearchData([]);
+      } catch (error) {
+        console.error("Error fetching route:", error);
+      } finally {
+        setLoadingRoute(false);
+      }
+    },
+    [fetchRoute, fetchBusInfo, setSelectedBus, setRouteId, subscribe, setActiveLiveBus, setMapCenter]
+  );
 
   useEffect(() => {
-    if (searchInput.trim().length === 0) {
+    if (!searchInput.trim()) {
       setSearchData([]);
       setBusSearchResults([]);
     }
   }, [searchInput]);
 
   useEffect(() => {
-      const huh = localStorage.getItem('lang')
-      if(!huh){
-          setLangTheme(true)
-      }
-  },[])
+    if (!localStorage.getItem("lang")) setLangTheme(true);
+  }, []);
 
+  const noResultsFound = useMemo(() => searchInput && busSearchResults.length === 0, [searchInput, busSearchResults]);
+
+ 
   return (
     <>
       <div className="fixed top-5 left-5 max-[500px]:left-1/2 max-[500px]:-translate-x-1/2 max-[500px]:w-[90%] flex flex-col items-center gap-3">
@@ -409,16 +425,7 @@ const UserInter = () => {
         }
         {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
           <div 
-            onClick={()=>{
-              const busStopID = trackingBusStop.busStopID!;
-              setAnonLocation(selectedBusRouteInfo?.busStops[busStopID].coords??null);
-              setDestinationData((prev)=>({
-                ...prev,
-                finish: selectedBusRouteInfo?.busStops[busStopID].name ?? '',
-                B:selectedBusRouteInfo?.busStops[busStopID].coords??null,
-                startActive: true,
-                finishActive: true
-              }))}}
+            onClick={selectedBusClick}
               className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
             <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
               <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
@@ -539,6 +546,7 @@ const UserInter = () => {
         </div>
       }
       <BusRouteInfo/>
+      {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>}
     </>
   );
 };

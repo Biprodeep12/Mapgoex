@@ -94,8 +94,8 @@ export const Ai = ({setOpenAi, openAi}:props) => {
 
   return (
     <>
-    {openAi&&<div className="bg-white/20 md:hidden fixed z-[19] inset-0 backdrop-blur-sm"></div>}
-    <div className={`fixed md:bottom-5 max-md:top-1/2 md:left-5 left-1/2 max-md:-translate-1/2 p-2 transition-all duration-300 z-20 ${openAi?'translate-y-0 opacity-100 flex':'translate-y-100 opacity-0 hidden'} bg-white w-full max-w-[340px] max-h-[95%] md:max-h-[500px] h-full text-lg drop-shadow-2xl rounded-2xl flex-col gap-2`}>
+    {openAi&&<div className="bg-white/20 md:hidden fixed z-[21] inset-0 backdrop-blur-sm"></div>}
+    <div className={`fixed md:bottom-5 max-md:top-1/2 md:left-5 left-1/2 max-md:-translate-1/2 p-2 transition-all duration-300 z-[22] ${openAi?'translate-y-0 opacity-100 flex':'translate-y-100 opacity-0 hidden'} bg-white md:w-full w-[95%] max-w-[340px] max-h-[95%] md:max-h-[500px] h-full text-lg drop-shadow-2xl rounded-2xl flex-col gap-2`}>
       <div className="flex flex-row items-center justify-between rounded-xl text-xl bg-blue-100 py-1 px-2">
         <div className="font-semibold text-blue-600">Geox</div>
         <X onClick={()=>setOpenAi(false)} className="p-[1px] rounded-full text-blue-600 hover:bg-blue-50 cursor-pointer" />

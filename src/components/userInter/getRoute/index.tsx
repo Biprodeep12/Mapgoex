@@ -1,7 +1,7 @@
 import { useMapContext } from "@/context/MapContext";
 import axios from "axios";
 import { CarFront, Footprints, Loader2 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const ROUTE_PROFILES = [
   { id: "foot-walking", label: "Walking", icon: Footprints },
@@ -9,7 +9,7 @@ const ROUTE_PROFILES = [
 ];
 
 const GetRoute = () => {
-  const { userLocation, setAnonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
+  const { userLocation, setAnonRouteGeoJSON, anonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
   const [loading, setLoading] = useState(false);
   const [activeProfile, setActiveProfile] = useState<string>("");
   const ContentRef = useRef<{ userLocation: [number, number]; anonLocation: [number, number];profile: string } | null>(null)
@@ -37,9 +37,7 @@ const GetRoute = () => {
           }
         );
 
-        setAnonRouteGeoJSON(res.data);
-        console.log(res.data);
-        
+        setAnonRouteGeoJSON(res.data);        
 
         const centerLng = (userLocation[0] + anonLocation[0]) / 2;
         const centerLat = (userLocation[1] + anonLocation[1]) / 2;
@@ -56,6 +54,12 @@ const GetRoute = () => {
     },
     [userLocation, anonLocation]
   );
+
+  useEffect(()=>{
+    if(!anonRouteGeoJSON){
+      setActiveProfile('')
+    }
+  },[anonRouteGeoJSON])
 
   return (
     <div className="grid grid-cols-2 gap-2 w-full">
