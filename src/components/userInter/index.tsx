@@ -274,7 +274,7 @@ const UserInter = () => {
     if (!localStorage.getItem("lang")) setLangTheme(true);
   }, []);
 
-  const noResultsFound = useMemo(() => searchInput && busSearchResults.length === 0, [searchInput, busSearchResults]);
+  // const noResultsFound = useMemo(() => searchInput && busSearchResults.length === 0, [searchInput, busSearchResults]);
 
  
   return (
@@ -313,9 +313,10 @@ const UserInter = () => {
           </div>
         </div>
 
-        {(destinationData.finishActive || destinationData.startActive) &&
-          <>
-            <div className="bg-white text-lg w-full rounded-2xl drop-shadow-2xl p-3 flex flex-col items-center gap-2">
+          <div className="flex flex-col gap-3 w-full min-md:fixed min-md:max-w-[400px] right-5 top-5">
+            {(destinationData.finishActive || destinationData.startActive) &&
+            <>
+             <div className="bg-white text-lg w-full rounded-2xl drop-shadow-2xl p-3 flex flex-col items-center gap-2">
               <div className="flex flex-row items-center w-full gap-3">
                 <div className="flex-1 flex flex-col gap-1.5">
                   {destinationData.finishActive &&
@@ -362,9 +363,35 @@ const UserInter = () => {
               <MapPinned className="text-blue-500 w-5 h-5"/>
               Your Location
             </button>
+            }</>}
+            {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
+              <div
+                onClick={selectedBusClick}
+                  className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
+                <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
+                  <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
+                  <div className="flex flex-col">
+                    <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
+                      {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
+                    </div>
+                    {!busStopsETA[trackingBusStop.busStopID]?.reached?
+                      <div className="text-lg text-gray-500">
+                        Reaching in Less than{" "}
+                        <span className="font-medium text-gray-700">
+                          {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
+                        </span>
+                      </div>
+                      :
+                      <div className="text-sm text-gray-500">Reached</div>
+                    }
+                  </div>
+                </div>
+                <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
+                  <X className="h-6 w-6 shrink-0 text-gray-600"/>
+                </div>
+              </div>
             }
-          </>
-        }
+          </div>
         
         {searchInput && busSearchResults.length > 0 &&
           <div className="bg-white w-full text-lg drop-shadow-2xl rounded-2xl p-3 flex flex-col gap-2 min-[500px]:max-w-[340px]">
@@ -423,33 +450,6 @@ const UserInter = () => {
               ))}
           </div>
         }
-        {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
-          <div 
-            onClick={selectedBusClick}
-              className="bg-white w-full rounded-2xl drop-shadow-2xl p-3 flex flex-row">
-            <div className="flex-1 text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 flex flex-col">
-              <div className="font-bold text-xl">{selectedBusRouteInfo?.busStops[trackingBusStop.busStopID].name}</div>
-              <div className="flex flex-col">
-                <div className={`text-2xl font-bold ${busStopsETA[trackingBusStop.busStopID]?.reached?'text-gray-400':'text-blue-600'}`}>
-                  {busStopsETA[trackingBusStop.busStopID]?.eta||'--:--'}
-                </div>
-                {!busStopsETA[trackingBusStop.busStopID]?.reached?
-                  <div className="text-lg text-gray-500">
-                    Reaching in Less than{" "}
-                    <span className="font-medium text-gray-700">
-                      {getBusStopMinutes(busStopsETA[trackingBusStop.busStopID]?.etaSeconds)}
-                    </span>
-                  </div>
-                  :
-                  <div className="text-sm text-gray-500">Reached</div>
-                }
-              </div>
-            </div>
-            <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
-              <X className="h-6 w-6 shrink-0 text-gray-600"/>
-            </div>
-          </div>
-        }
 
       </div>
 
@@ -457,7 +457,7 @@ const UserInter = () => {
 
       <Ai setOpenAi={setOpenAi} openAi={openAi}/>
 
-      <div className="fixed max-[500px]:hidden top-5 right-5">
+      <div className={`${destinationData.finishActive||destinationData.startActive||trackingBusStop.active?'hidden':'block'} fixed max-[500px]:hidden top-5 right-5`}>
           <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:hidden border-[3px] border-blue-500 w-12 h-12 shrink-0 flex items-center justify-center">
             {!user?.photoURL? 
             <User className="bg-white w-9.5 h-9.5 rounded-full p-1"/>
