@@ -32,7 +32,7 @@ interface BusSimulatorContextType {
   logs: string[];
   subscribe: () => void;
   unsubscribe: () => void;
-  startSimulation: () => void;
+  startSimulation: (Id: string) => void;
   busPos: BusLocation[] | null;
   setBusPos: React.Dispatch<React.SetStateAction<BusLocation[] | null>>;
   busStopsETA: StopETA[] | null;
@@ -138,10 +138,10 @@ export const BusSimulatorProvider = ({ children }: { children: ReactNode }) => {
     log("❌ Unsubscribed from route " + routeId);
   };
 
-  const startSimulation = () => {
-    if (!routeId || !isConnected) return;
-    socketRef.current?.emit("startSimulation", routeId);
-    log("▶️ Requested simulation start for " + routeId);
+  const startSimulation = (Id:string) => {
+    if (!Id || !isConnected) return;
+    socketRef.current?.emit("startSimulation", Id);
+    log("▶️ Requested simulation start for " + Id);
   };
 
   return (
