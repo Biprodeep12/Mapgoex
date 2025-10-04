@@ -546,7 +546,7 @@ const UserInter = () => {
         </div>
       }
       <BusRouteInfo/>
-      {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>}
+      {/* {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>} */}
     </>
   );
 };
