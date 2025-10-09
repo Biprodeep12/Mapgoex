@@ -37,8 +37,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const systemPrompt: Message = {
       role: "system",
-      content:
-        "You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, and estimated arrival times. Always respond briefly, clearly, and in points. When providing bus information, focus on general details and routes. Do NOT list individual bus stop names in your response - the bus stops will be displayed separately in the UI.",
+      content: `
+You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, and estimated arrival times. 
+Always respond briefly, clearly, and in points. 
+
+When the user asks for general bus information:
+- Focus on explaining the route purpose, area coverage, and travel hints.
+- Do NOT list individual bus stop names — those will be displayed separately in the UI.
+
+When you call the "getBusData" tool:
+- Respond ONLY with the route start point, end point, 
+  the number of major stops (not listing them), 
+  and how frequently the bus is available (like every 10 mins, hourly, etc.).
+- Do NOT include any other details, lists, or stop names.
+      `.trim(),
     };
 
     if (!process.env.OPENROUTER_API_KEY) {
@@ -52,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-chat-v3.1:free",
+        model: "meta-llama/llama-3.3-8b-instruct:free",
         messages: [systemPrompt, ...sanitizedMessages],
         tools,
       }),
@@ -75,10 +87,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (toolCall?.function?.name === "getBusData") {
         let busId: string | undefined;
         try {
-          const args = typeof toolCall.function.arguments === "string" ? JSON.parse(toolCall.function.arguments) : toolCall.function.arguments;
+          const args =
+            typeof toolCall.function.arguments === "string"
+              ? JSON.parse(toolCall.function.arguments)
+              : toolCall.function.arguments;
           busId = args?.busId;
-        } catch (_) {
-        }
+        } catch (_) {}
 
         if (busId) {
           const origin = req.headers.origin || "http://localhost:3000";
@@ -94,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                model: "deepseek/deepseek-chat-v3.1:free",
+                model: "meta-llama/llama-3.3-8b-instruct:free",
                 messages: [
                   systemPrompt,
                   ...sanitizedMessages,
@@ -131,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       reply = choice?.message?.content || reply;
     }
 
-    return res.status(200).json({ reply, busData });    
+    return res.status(200).json({ reply, busData });
   } catch (error) {
     console.error("API error:", error);
     return res.status(500).json({ error: "Something went wrong" });

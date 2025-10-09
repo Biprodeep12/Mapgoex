@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown"
 import getKeyboardHeight from "./keyboardheight";
 import { BusData } from "@/types/bus";
+import { useMapContext } from "@/context/MapContext";
 
 interface Message {
   role: "user" | "system" | "assistant";
@@ -16,6 +17,7 @@ interface props {
 }
 
 export const Ai = ({setOpenAi, openAi}:props) => {
+  const { setAnonLocation, setMapCenter } = useMapContext();
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Hi! I'm Geox. Ask me about bus locations, stops, or travel times." },
@@ -62,6 +64,19 @@ export const Ai = ({setOpenAi, openAi}:props) => {
 
     } catch (err) {
       console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchData = async (stop:string) => {
+    try {
+      const res = await fetch(`/api/stop/${stop}`);
+      if (!res.ok) {
+        throw new Error(`Error: ${res.status}`);
+      }
+    } catch (err) {
+      console.log(err);
     } finally {
       setLoading(false);
     }
@@ -126,13 +141,13 @@ export const Ai = ({setOpenAi, openAi}:props) => {
               <ReactMarkdown>{message.content}</ReactMarkdown>
                {message?.data &&
                <>
-                 <div className="text-base font-medium text-blue-600 mb-1">Bus Stops:</div>
+                 <div className="text-lg font-bold text-blue-600 mb-1">Bus Stops:</div>
                  <div className="grid grid-cols-2 w-full gap-2 mt-3">
                   {message?.data?.busStops?.map((bus,indx)=>
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-blue-50 border hover:border-blue-500 border-blue-200" 
+                    <button onClick={()=>{setAnonLocation(bus.coords);setMapCenter({center: bus.coords,zoom: 15});fetchData(bus.stopId)}} className="cursor-pointer flex items-center gap-2 p-3 rounded-xl bg-blue-50 border hover:border-blue-500 border-blue-200" 
                     key={indx}>
                       <span className="text-gray-800 text-sm font-medium">{bus.name}</span>
-                    </div>
+                    </button>
                   )}
                </div>
                </>}
