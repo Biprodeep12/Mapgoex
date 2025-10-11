@@ -1,10 +1,9 @@
-import Map, { Marker, NavigationControl, Source, Layer, MapRef } from "react-map-gl/maplibre";
+import Map, { Marker, NavigationControl, Source, Layer, MapRef, Popup } from "react-map-gl/maplibre";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
-import Image from "next/image";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import { BusFront } from "lucide-react";
 
