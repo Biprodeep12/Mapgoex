@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown"
 import getKeyboardHeight from "./keyboardheight";
 import { BusData } from "@/types/bus";
 import { useMapContext } from "@/context/MapContext";
+import { destinationType } from ".";
 
 interface Message {
   role: "user" | "system" | "assistant";
@@ -14,9 +15,10 @@ interface Message {
 interface props {
     openAi: boolean
     setOpenAi: React.Dispatch<React.SetStateAction<boolean>>
+    setDestinationData: React.Dispatch<React.SetStateAction<destinationType>>
 }
 
-export const Ai = ({setOpenAi, openAi}:props) => {
+export const Ai = ({setOpenAi, openAi, setDestinationData}:props) => {
   const { setAnonLocation, setMapCenter } = useMapContext();
   const [userInput, setUserInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -69,18 +71,15 @@ export const Ai = ({setOpenAi, openAi}:props) => {
     }
   };
 
-  const fetchData = async (stop:string) => {
-    try {
-      const res = await fetch(`/api/stop/${stop}`);
-      if (!res.ok) {
-        throw new Error(`Error: ${res.status}`);
-      }
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const selectedDestinationClick = (dest:string,coords:[number,number]) => {
+    setDestinationData((prev) => ({
+      ...prev,
+      finish: dest,
+      B: coords,
+      startActive: true,
+      finishActive: true,
+    }));
+  }
 
 	useEffect(() => {
 		const unsubscribe = getKeyboardHeight((height) => {
@@ -144,9 +143,11 @@ export const Ai = ({setOpenAi, openAi}:props) => {
                  <div className="text-lg font-bold text-blue-600 mb-1">Bus Stops:</div>
                  <div className="grid grid-cols-2 w-full gap-2 mt-3">
                   {message?.data?.busStops?.map((bus,indx)=>
-                    <button onClick={()=>{setAnonLocation(bus.coords);setMapCenter({center: bus.coords,zoom: 15});fetchData(bus.stopId)}} className="cursor-pointer flex items-center gap-2 p-3 rounded-xl bg-blue-50 border hover:border-blue-500 border-blue-200" 
+                    <button 
+                      onClick={()=>{setAnonLocation(bus.coords);setMapCenter({center: bus.coords,zoom: 15});selectedDestinationClick(bus.name,bus.coords)}} 
+                      className="cursor-pointer flex items-center p-3 rounded-xl bg-blue-50 border hover:border-blue-500 border-blue-200" 
                     key={indx}>
-                      <span className="text-gray-800 text-sm font-medium">{bus.name}</span>
+                      <span className="text-gray-800 text-sm font-medium truncate">{bus.name}</span>
                     </button>
                   )}
                </div>

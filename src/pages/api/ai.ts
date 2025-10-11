@@ -11,12 +11,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { messages } = req.body as { messages: Array<Partial<Message> & Record<string, unknown>> };
+    const { messages } = req.body as {
+      messages: Array<Partial<Message> & Record<string, unknown>>;
+    };
 
     const sanitizedMessages: Message[] = (messages || [])
-      .map((m) => ({ role: String(m.role || "user") as Message["role"], content: String(m.content || "") }))
+      .map((m) => ({
+        role: String(m.role || "user") as Message["role"],
+        content: String(m.content || ""),
+      }))
       .filter((m) => m.content.trim().length > 0)
       .slice(-20);
+
+    const systemPrompt: Message = {
+      role: "system",
+      content: `
+You are Geox, an AI assistant that helps users with bus locations, nearby stops, and estimated arrival times.
+Always respond briefly, clearly, and in points.
+
+When the user asks for general bus information:
+- Focus on explaining the route purpose, area coverage, and travel hints.
+- Do NOT list individual bus stop names — those will be displayed separately in the UI.
+
+When you call the "getBusData" tool:
+- Respond ONLY with route start point, end point,
+  number of major stops (not listing them),
+  and frequency (like every 10 mins, hourly, etc.).
+      `.trim(),
+    };
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: "Missing OPENROUTER_API_KEY" });
+    }
 
     const tools = [
       {
@@ -27,35 +53,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           parameters: {
             type: "object",
             properties: {
-              busId: { type: "string", description: "The bus ID like A15, B22" },
+              busId: { type: "string", description: "Bus ID like A15, B22" },
             },
             required: ["busId"],
           },
         },
       },
     ];
-
-    const systemPrompt: Message = {
-      role: "system",
-      content: `
-You are Geox, an AI assistant that helps users with bus locations, nearby bus stops, and estimated arrival times. 
-Always respond briefly, clearly, and in points. 
-
-When the user asks for general bus information:
-- Focus on explaining the route purpose, area coverage, and travel hints.
-- Do NOT list individual bus stop names — those will be displayed separately in the UI.
-
-When you call the "getBusData" tool:
-- Respond ONLY with the route start point, end point, 
-  the number of major stops (not listing them), 
-  and how frequently the bus is available (like every 10 mins, hourly, etc.).
-- Do NOT include any other details, lists, or stop names.
-      `.trim(),
-    };
-
-    if (!process.env.OPENROUTER_API_KEY) {
-      return res.status(500).json({ error: "Missing OPENROUTER_API_KEY" });
-    }
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -71,75 +75,74 @@ When you call the "getBusData" tool:
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ error: "Upstream error", detail: errorText });
+      const err = await response.text();
+      return res.status(response.status).json({ error: "Upstream error", detail: err });
     }
 
     const data = await response.json();
-
+    
     let reply = "Sorry, I couldn’t generate a response.";
     let busData = null;
-
     const choice = data?.choices?.[0];
 
-    if (choice?.message?.tool_calls?.length) {
-      const toolCall = choice.message.tool_calls[0];
-      if (toolCall?.function?.name === "getBusData") {
-        let busId: string | undefined;
-        try {
-          const args =
-            typeof toolCall.function.arguments === "string"
-              ? JSON.parse(toolCall.function.arguments)
-              : toolCall.function.arguments;
-          busId = args?.busId;
-        } catch (_) {}
+    const toolCall = choice?.message?.tool_calls?.[0];
+    if (toolCall?.function?.name === "getBusData") {
+      let busId: string | undefined;
+      try {
+        const args =
+          typeof toolCall.function.arguments === "string"
+            ? JSON.parse(toolCall.function.arguments)
+            : toolCall.function.arguments;
+        busId = args?.busId;
+      } catch (error) {
+        console.warn('Something went wrong',error);
+      }
 
-        if (busId) {
-          const origin = req.headers.origin || "http://localhost:3000";
-          const busRes = await fetch(`${origin}/api/bus/${busId}`);
+      if (busId) {
+        const origin = req.headers.origin || "http://localhost:3000";
+        const busRes = await fetch(`${origin}/api/bus/${busId}`);
 
-          if (busRes.ok) {
-            busData = await busRes.json();
+        if (busRes.ok) {
+          busData = await busRes.json();
 
-            const followUp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model: "meta-llama/llama-3.3-8b-instruct:free",
-                messages: [
-                  systemPrompt,
-                  ...sanitizedMessages,
-                  {
-                    role: "assistant",
-                    content: choice.message?.content || "",
-                    tool_calls: choice.message?.tool_calls || [],
-                  },
-                  {
-                    role: "tool",
-                    tool_call_id: toolCall.id,
-                    content: JSON.stringify(busData),
-                  },
-                ],
-              }),
-            });
+          const followUp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "meta-llama/llama-3.3-8b-instruct:free",
+              messages: [
+                systemPrompt,
+                ...sanitizedMessages,
+                {
+                  role: "assistant",
+                  content: choice.message?.content || "",
+                  tool_calls: choice.message?.tool_calls || [],
+                },
+                {
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: JSON.stringify(busData),
+                },
+              ],
+            }),
+          });
 
-            if (followUp.ok) {
-              const followUpData = await followUp.json();
-              reply =
-                followUpData?.choices?.[0]?.message?.content ||
-                "I fetched the bus data but couldn’t generate a final answer.";
-            } else {
-              reply = "Fetched bus data but failed to generate final answer.";
-            }
+          if (followUp.ok) {
+            const followUpData = await followUp.json();
+            reply =
+              followUpData?.choices?.[0]?.message?.content ||
+              "I fetched the bus data but couldn’t generate a final answer.";
           } else {
-            reply = `Couldn't fetch data for bus ${busId}.`;
+            reply = "Fetched bus data but failed to generate final answer.";
           }
         } else {
-          reply = "I couldn't read the bus ID.";
+          reply = `Couldn't fetch data for bus ${busId}.`;
         }
+      } else {
+        reply = "I couldn't read the bus ID.";
       }
     } else {
       reply = choice?.message?.content || reply;

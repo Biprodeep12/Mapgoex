@@ -6,6 +6,7 @@ import { useMapContext } from "@/context/MapContext";
 import { BusStop } from "@/types/bus";
 import Image from "next/image";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
+import { BusFront } from "lucide-react";
 
 export default function MainMap() {
   const { 
@@ -130,14 +131,11 @@ export default function MainMap() {
                 latitude={busPos[0].coords[1]}
                 anchor="bottom"
               >
-                <Image
-                  onClick={()=>busFocusRef.current = !busFocusRef.current}
-                  src="/bus.png"
-                  width={40}
-                  height={40}
-                  alt="buslogo"
-                  className="rotate-90 z-20"
-                />
+                <div 
+                  onClick={()=>busFocusRef.current = !busFocusRef.current} 
+                  className="rounded-full p-1 flex items-center justify-center bg-blue-400">
+                  <BusFront className="w-5 h-5 text-white"/>
+                </div>
               </Marker>
           )}
         </>

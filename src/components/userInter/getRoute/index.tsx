@@ -1,14 +1,19 @@
 import { useMapContext } from "@/context/MapContext";
 import axios from "axios";
 import { CarFront, Footprints, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 
 const ROUTE_PROFILES = [
   { id: "foot-walking", label: "Walking", icon: Footprints },
   { id: "driving-car", label: "Driving", icon: CarFront },
 ];
 
-const GetRoute = () => {
+interface props {
+  openAi: boolean
+  setOpenAi: React.Dispatch<React.SetStateAction<boolean>>
+}
+
+const GetRoute = ({openAi, setOpenAi}:props) => {
   const { userLocation, setAnonRouteGeoJSON, anonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
   const [loading, setLoading] = useState(false);
   const [activeProfile, setActiveProfile] = useState<string>("");
@@ -54,6 +59,12 @@ const GetRoute = () => {
     },
     [userLocation, anonLocation]
   );
+
+  useEffect(() => {
+    if(openAi && anonRouteGeoJSON) {
+      setOpenAi(false);
+    }
+  },[anonRouteGeoJSON,openAi,setOpenAi])
 
   useEffect(()=>{
     if(!anonRouteGeoJSON){

@@ -1,6 +1,6 @@
 import { useMapContext } from "@/context/MapContext";
 import { Loader2, LocateFixed, MapPin, MapPinned, Search, Sparkles, User, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BusRouteInfo } from "./busRouteInfo";
 import AuthPage, { Dropdown } from "../Auth";
 import { useAuth } from "@/context/userContext";
@@ -10,7 +10,6 @@ import { Ai } from "./ai";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import GetRoute from "./getRoute";
 import { DrawerDest } from "./getRoute/drawerDest";
-import HomeDrawer from "../HomeDrawer";
 
 interface SearchData {
   coords: [number, number],
@@ -203,6 +202,16 @@ const UserInter = () => {
     }));
   }, [trackingBusStop, selectedBusRouteInfo, destinationData.finish, setAnonRouteGeoJSON, setAnonLocation]);
 
+  const selectedDestinationClick = (dest:string,coords:[number,number]) => {
+    setDestinationData((prev) => ({
+      ...prev,
+      finish: dest,
+      B: coords,
+      startActive: true,
+      finishActive: true,
+    }));
+  }
+
   const getCoordsFromLocationORS = useCallback(async () => {
     if (!searchInput.trim()) return;
     try {
@@ -347,7 +356,7 @@ const UserInter = () => {
                 </div>
               </div>
               {destinationData.start!=='' && destinationData.finish!==''&& userLocation && anonLocation &&
-                <GetRoute/>
+                <GetRoute openAi={openAi} setOpenAi={setOpenAi}/>
               }
             </div>
             {((destinationData.finishActive&&!destinationData.startActive)||(destinationData.startActive&&!destinationData.finishActive)) &&
@@ -386,7 +395,7 @@ const UserInter = () => {
                     }
                   </div>
                 </div>
-                <div onClick={()=>setTrackingBusStop({busStopID: null,active: false})} className="flex items-center justify-center">
+                <div onClick={(e)=>{e.stopPropagation();setTrackingBusStop({busStopID: null,active: false})}} className="flex items-center justify-center">
                   <X className="h-6 w-6 shrink-0 text-gray-600"/>
                 </div>
               </div>
@@ -439,8 +448,9 @@ const UserInter = () => {
                   <button 
                     key={indx} 
                     onClick={()=>{
-                      setUserLocation(search.coords);
+                      setAnonLocation(search.coords);
                       setMapCenter({center: search.coords,zoom: 15})
+                      selectedDestinationClick(search.label,search.coords)
                       setSearchInput('');
                     }}
                       className="text-left cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-lg"
@@ -455,7 +465,7 @@ const UserInter = () => {
 
       <DrawerDest destinationData={destinationData} setDestinationData={setDestinationData}/>
 
-      <Ai setOpenAi={setOpenAi} openAi={openAi}/>
+      <Ai setOpenAi={setOpenAi} openAi={openAi} setDestinationData={setDestinationData}/>
 
       <div className={`${destinationData.finishActive||destinationData.startActive||trackingBusStop.active?'hidden':'block'} fixed max-[500px]:hidden top-5 right-5`}>
           <div onClick={()=> {setOpenDropUser(!openDropUser)}} className="rounded-full max-[500px]:hidden border-[3px] border-blue-500 w-12 h-12 shrink-0 flex items-center justify-center">

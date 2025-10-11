@@ -1,5 +1,5 @@
 import { useMapContext } from "@/context/MapContext";
-import { X, Bus, LoaderCircle, EllipsisVertical, Share2 } from "lucide-react";
+import { X, Bus, LoaderCircle, EllipsisVertical, Share2, BusFront } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
@@ -100,7 +100,8 @@ export const BusRouteInfo = memo(() => {
       <div className="pt-6 pl-6 pr-3 pb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+            {/* <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" /> */}
+            <BusFront className="text-blue-500 h-7 w-7"/>
             <div className="text-2xl font-bold text-gray-900">{selectedBus.id}</div>
           </div>
           <button 
@@ -161,7 +162,8 @@ export const BusRouteInfo = memo(() => {
         <div ref={topRef} className="px-4 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+              {/* <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" /> */}
+              <BusFront className="text-blue-500 w-7 h-7"/>
               <div className="text-[22px] font-bold text-gray-900">{selectedBus.id}</div>
             </div>
             <div className="flex flex-row gap-4 items-center">
