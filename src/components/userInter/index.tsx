@@ -281,7 +281,7 @@ const UserInter = () => {
 
   useEffect(() => {
     if (!localStorage.getItem("lang")) setLangTheme(true);
-  }, []);
+  }, []);  
 
   // const noResultsFound = useMemo(() => searchInput && busSearchResults.length === 0, [searchInput, busSearchResults]);
 
@@ -555,7 +555,7 @@ const UserInter = () => {
           </div>
         </div>
       }
-      <BusRouteInfo/>
+      <BusRouteInfo setAuthOpen={setAuthOpen}/>
       {/* {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>} */}
     </>
   );

@@ -5,6 +5,7 @@ import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
 import WeatherIcon from "@/utils/weather";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
+import { Feedback } from "./feedback";
 
 interface WeatherData {
   name: string;
@@ -13,9 +14,13 @@ interface WeatherData {
   description: string;
 }
 
+interface Props {
+  setAuthOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
 const API_KEY = "f0a3263ad56623877e07814bc905e67c";
 
-export const BusRouteInfo = memo(() => {
+export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
   const { 
     selectedBus, 
     routeGeoJSON, 
@@ -129,6 +134,7 @@ export const BusRouteInfo = memo(() => {
         
         <div className="flex-1 overflow-y-auto p-4">
           <BusStops/>
+          <Feedback setAuthOpen={setAuthOpen} routeName={selectedBusRouteInfo.Route} ratingRoute={selectedBusRouteInfo.rating}/>
         </div>
       </div>
 

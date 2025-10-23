@@ -10,6 +10,7 @@ const BusStopSchema = new Schema({
 
 const BusRouteInfoSchema = new Schema<BusRouteInfoDocument>({
   Route: { type: String, required: true },
+  rating: { type: Number, required: true, default: 0 },
   startPoint: {
     name: { type: String, required: true },
     coords: { type: [Number], required: true },

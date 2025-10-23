@@ -6,6 +6,7 @@ export interface BusStop {
 
 export interface BusData {
   Route: string;
+  rating: number;
   startPoint: {
     name: string;
     coords: [number, number];
