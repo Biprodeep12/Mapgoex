@@ -34,3 +34,35 @@ body {
 .VIpgJd-suEOdc .VIpgJd-yAWNEb-L7lbkb .skiptranslate{
     display: none !important;
 }
+.landingEntry{
+  animation: landingEntryAnim 0.5s ease-in-out forwards;
+  opacity: 0;
+}
+@keyframes landingEntryAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(200px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.landingfirst{
+  animation: landingfirstAnim 0.5s ease-in-out forwards 1s;
+  opacity: 0;
+}
+.landingsecond{
+  animation: landingfirstAnim 0.5s ease-in-out forwards 1.2s;
+  opacity: 0;
+}
+@keyframes landingfirstAnim {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

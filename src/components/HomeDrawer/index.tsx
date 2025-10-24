@@ -2,9 +2,16 @@ import { useMapContext } from "@/context/MapContext";
 import BottomDrawer from "../drawer";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Bus, Car, Leaf, Sparkles, TrendingDown } from "lucide-react";
+import { ArrowRight, Bus, Car, Leaf, Loader2, Sparkles, TrendingDown, X } from "lucide-react";
+import { allBusData, busDataType } from "../userInter";
 
-const HomeDrawer = () => {
+interface Props {
+  handleBusClick: (bus: busDataType) => void;
+  loadingRoute: boolean;
+  setOpenAvailableBuses: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const HomeDrawer = ({handleBusClick ,loadingRoute, setOpenAvailableBuses}:Props) => {
   const { anonRouteGeoJSON, routeGeoJSON } = useMapContext();
   const [screenHeight, setScreenHeight] = useState<number | null>(null);
 
@@ -23,69 +30,47 @@ const HomeDrawer = () => {
 
   return (
     <BottomDrawer
-      minHeight={screenHeight * (3 / 5)}
-      maxHeight={screenHeight - 10}
+      minHeight={screenHeight * (1 / 2)}
+      maxHeight={screenHeight - 200}
     >
-      <div className="flex flex-col w-full px-4 pb-4 gap-5">
-        <div className="flex flex-col items-center">
-            <div className="text-4xl font-bold tracking-wider text-blue-500 flex flex-row items-center gap-2">
-                <Image
-                 src='/logo.svg'
-                 alt="logo"
-                 width={40}
-                 height={40}
-                />
-                MapGeox
-            </div>
-        </div>
-      <div className="p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="p-2 rounded-xl bg-green-400 shadow-sm">
-            <Leaf className="w-5 h-5 text-white" />
-          </div>
+      <div className="flex flex-col px-4 gap-4">
+        <div className="text-2xl text-blue-500 font-bold flex flex-row justify-between items-center">
           <div>
-            <div className="text-xl font-bold">Eco Impact</div>
-            <div className="text-base">Per 10km comparison</div>
+            <Bus className="inline w-8 h-8 mr-2 mb-1"/>
+            Available Bus Routes
           </div>
+          <button onClick={()=>setOpenAvailableBuses(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors group bg-gray-100">
+            <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+          </button>
         </div>
-        
-        <div className="space-y-3">
-          <div className="p-4 rounded-xl bg-green-50 border border-green-200">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-lg font-semibold">
-                <Bus className="w-5 h-5 text-green-600" />
-                <div>Public Transport</div>
-              </div>
-              <div className="flex items-center gap-1 text-base px-2.5 py-1 bg-green-200 text-green rounded-full font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-green-600"/>
-                <div>Best Choice</div>
-              </div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <div className="text-3xl font-bold text-green-600">0.4kg</div>
-              <div className="text-base">CO₂ per 10km</div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-red-50 border border-red-200">
-            <div className="flex items-center gap-2 text-lg font-semibold mb-2">
-              <Car className="w-5 h-5 text-red-600" />
-              <div>Private Car/Cab</div>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <div className="text-3xl font-bold text-red-600">2.4kg</div>
-              <div className="text-base">CO₂ per 10km</div>
-            </div>
-          </div>
-
--          <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-green-100 border border-green-300">
-            <TrendingDown className="w-5 h-5 text-green-600" />
-            <div className="text-sm font-semibold">
-              83% less emissions with public transport
-            </div>
-          </div>
+        <div className="flex flex-col gap-5">
+            {allBusData.map((bus,indx)=>(
+              <button
+                key={indx} 
+                onClick={() => handleBusClick(bus)}
+                disabled={loadingRoute}
+                className="text-left cursor-pointer py-3 px-4 hover:bg-blue-50 rounded-lg border-l-4 border-blue-500 pl-4 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="font-bold text-blue-700 text-xl">{bus.id}</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium">From:</span> {bus.NameA}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">To:</span> {bus.NameB}
+                </div>
+                {loadingRoute && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                    <span className="text-xs text-blue-500">Loading route...</span>
+                  </div>
+                )}
+              </button>
+            ))}
         </div>
-      </div>
+        <button onClick={() => window.open("/busAdmin", "_blank")} className="cursor-pointer py-2 px-3 text-white bg-blue-400 rounded-lg text-lg flex flex-row gap-2 justify-center items-center">
+          Go To Bus Fleet Control
+          <ArrowRight className="w-5 h-5"/>
+        </button>
       </div>
     </BottomDrawer>
   );

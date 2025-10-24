@@ -47,7 +47,7 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
   };
 
   return(
-    <div className='absolute right-2 -bottom-[90px] bg-white flex flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
+    <div className='absolute z-10 right-2 -bottom-[90px] bg-white flex drop-shadow-2xl flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
       <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 flex flex-row gap-1 items-center'>
         <Languages className='text-blue-600 w-5 h-5'/>
         Language

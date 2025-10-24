@@ -11,6 +11,7 @@ import { useBusSimulator } from "@/context/BusSimulatorContext";
 import GetRoute from "./getRoute";
 import { DrawerDest } from "./getRoute/drawerDest";
 import { CarbonEmissionCard } from "./landing";
+import HomeDrawer from "../HomeDrawer";
 
 interface SearchData {
   coords: [number, number],
@@ -26,7 +27,7 @@ interface Feature {
   };
 }
 
-type busDataType = {
+export type busDataType = {
   id: string;
   A: [number,number],
   B: [number,number],
@@ -45,7 +46,7 @@ export type destinationType = {
   finishActive: boolean
 }
 
-const allBusData:busDataType[] = [
+export const allBusData:busDataType[] = [
   {
     id: 'A15',
     A: [88.377639, 22.465722],
@@ -138,6 +139,7 @@ const UserInter = () => {
   const [openDropUser, setOpenDropUser] = useState(false);
   const [openAi, setOpenAi] = useState(false);
   const [openLocation, setOpenLocation] = useState(false);
+  const [openAvailableBuses, setOpenAvailableBuses] = useState(false);
 
   const [destinationData, setDestinationData] = useState<destinationType>({
     start: "",
@@ -323,6 +325,20 @@ const UserInter = () => {
           </div>
         </div>
 
+        <div className="absolute hidden max-[500px]:block right-1.5 -bottom-[45px]">
+            <button
+                onClick={()=>{
+                  if(userLocation==null){
+                    setOpenLocation(true)
+                  } else {
+                    handleGetLocation();
+                  }}}
+                className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
+            >
+                <LocateFixed className="w-5 h-5"/>
+            </button>
+        </div>
+
           <div className="flex flex-col gap-3 w-full min-md:fixed min-md:max-w-[400px] right-5 top-5">
             {(destinationData.finishActive || destinationData.startActive) &&
             <>
@@ -487,7 +503,7 @@ const UserInter = () => {
       {authOpen && <AuthPage setAuthOpen={setAuthOpen}/>}
       <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
 
-      <div className="group fixed right-2 bottom-70 rounded-full p-2 bg-white min-w-9 h-9 flex flex-row gap-2 items-center justify-center">
+      {/* <div className="group fixed right-2 bottom-70 rounded-full p-2 bg-white min-w-9 h-9 flex flex-row gap-2 items-center justify-center">
         {isConnected ?
           <>
             <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"/>
@@ -499,9 +515,9 @@ const UserInter = () => {
             <div className="group-hover:block hidden">Server is disconnected</div>
           </>
         }
-      </div>
+      </div> */}
 
-      <div className="fixed right-2 bottom-55">
+      <div className="fixed max-[500px]:hidden right-2 bottom-55">
           <button
               onClick={()=>{
                 if(userLocation==null){
@@ -515,7 +531,9 @@ const UserInter = () => {
           </button>
       </div>
 
-      <CarbonEmissionCard/>
+      <CarbonEmissionCard input={searchInput} setOpenAvailableBuses={setOpenAvailableBuses} openAvailableBuses={openAvailableBuses}/>
+
+      {openAvailableBuses && <HomeDrawer handleBusClick={handleBusClick} loadingRoute={loadingRoute} setOpenAvailableBuses={setOpenAvailableBuses}/>}
 
       {openLocation &&
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-[2px]">

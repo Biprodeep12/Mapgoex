@@ -88,7 +88,7 @@ export default function MainMap() {
       style={{ width: "100%", height: "100vh" }}
       mapStyle={mapStyle}
     >
-      <NavigationControl position="bottom-right" />
+      {/* <NavigationControl position="top-left" /> */}
 
       {userLocation && (
         <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="bottom">

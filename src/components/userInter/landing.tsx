@@ -1,64 +1,93 @@
-import { Leaf, TrendingDown, Users } from "lucide-react"
+import { useMapContext } from "@/context/MapContext";
+import { BadgeInfo, Component } from "lucide-react";
+import Image from "next/image";
 
-export function CarbonEmissionCard() {
+interface props {
+  input: string;
+  openAvailableBuses: boolean;
+  setOpenAvailableBuses: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export function CarbonEmissionCard({input, openAvailableBuses, setOpenAvailableBuses}:props) {
+  const { anonRouteGeoJSON, routeGeoJSON } = useMapContext();
+
+  if (anonRouteGeoJSON || routeGeoJSON) return null;
+  
   return (
-    <div className="fixed right-13 left-0 bottom-5 pl-5">
-      <div className="bg-white rounded-lg ml-auto max-w-[340px] w-full shadow-lg overflow-hidden border border-blue-200">
-        <div className="bg-blue-500 px-4 py-3">
-          <div className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-400 p-1.5 rounded-lg">
-                <Leaf className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="text-white font-bold text-base">Environmental Impact</h3>
-            </div>
+    <div className={`fixed ${(input.length>0) || openAvailableBuses?'translate-y-200 opacity-0':'translate-y-0 opacity-100'} transition-all duration-300 z-3 max-[500px]:bottom-0 bottom-5 min-[500px]:left-5 w-full min-[500px]:max-w-[340px]`}>
+
+      <div className="grid grid-cols-3 items-end place-items-center-safe w-full **:transition-all **:duration-300 **:ease-in-out">
+        <button className="group landingsecond cursor-pointer bg-white border-4 border-blue-500 hover:bg-blue-100 rounded-full h-20 w-20 shrink my-3 drop-shadow-2xl flex items-center justify-center">
+          <BadgeInfo className="w-10 h-10 text-blue-500 group-hover:scale-105"/>
+        </button>
+        <button onClick={()=>setOpenAvailableBuses(true)} className="group landingfirst cursor-pointer bg-white border-4 border-blue-500 hover:bg-blue-100 rounded-full h-25 w-25 shrink my-5 drop-shadow-2xl flex items-center justify-center">
+          <Image
+            src='/logo.svg'
+            width={60}
+            height={60}
+            alt="Bus"
+            className="group-hover:scale-105"
+          />
+        </button>
+        <button onClick={() => window.open("/busAdmin", "_blank")} className="group landingsecond cursor-pointer bg-white border-4 border-blue-500 hover:bg-blue-100 rounded-full h-20 w-20 shrink my-3 drop-shadow-2xl flex items-center justify-center">
+          <Component className="w-10 h-10 text-blue-500 group-hover:scale-105"/>
+        </button>
+      </div>
+
+      <div className="bg-white landingEntry min-[500px]:rounded-lg rounded-t-[50px] w-full drop-shadow-2xl border border-gray-200">
+
+        <div className="px-5 py-4 border-b border-gray-200">
+          <div className="font-bold text-3xl text-center">
+            <span className="text-white tracking-widest"   style={{
+              textShadow: `
+                3px 3px 0 #3b82f6,
+                -3px 3px 0 #3b82f6,
+                3px -3px 0 #3b82f6,
+                -3px -3px 0 #3b82f6,
+                0 3px 0 #3b82f6,
+                3px 0 0 #3b82f6,
+                0 -3px 0 #3b82f6,
+                -3px 0 0 #3b82f6
+              `
+            }}>Map</span>
+            <span className="text-blue-500">Geox</span>
           </div>
-          <p className="text-blue-100 text-xs font-medium mt-1">Your sustainable choice matters</p>
         </div>
 
-        <div className="px-4 py-3 space-y-2">
-          <div className="bg-green-50 rounded-lg p-2.5 border-l-4 border-green-500">
-            <p className="text-green-800 text-xs leading-snug">
-              <span className="font-bold text-green-600">75% less CO₂</span>
-              <span className="text-green-700"> with public transport</span>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-300">
-              <div className="flex items-start gap-2">
-                <div className="bg-blue-600 p-1.5 rounded-lg flex-shrink-0">
-                  <TrendingDown className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-blue-700 font-bold text-lg leading-tight">75%</p>
-                  <p className="text-blue-600 text-xs font-medium">CO₂ Cut</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-300">
-              <div className="flex items-start gap-2">
-                <div className="bg-blue-600 p-1.5 rounded-lg flex-shrink-0">
-                  <Users className="w-3 h-3 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-blue-700 font-bold text-lg leading-tight">40x</p>
-                  <p className="text-blue-600 text-xs font-medium">Efficient</p>
-                </div>
-              </div>
+        <div className="px-5 py-3 space-y-3">
+          <div className="text-center">
+            <p className="text-gray-600 font-bold text-lg mb-2">PUBLIC TRANSPORT IMPACT</p>
+            <div className="flex items-center py-2 justify-center rounded-lg bg-blue-50">
+              <div className="text-xl text-gray-600">CO₂ Reduction <span className="text-blue-600 font-bold">75%</span></div>
             </div>
           </div>
 
-          <div className="bg-green-50 rounded-lg p-2 border border-green-300">
-            <p className="text-green-700 text-xs font-semibold">✓ 2.3 kg CO₂ saved per trip</p>
+          <p className="text-gray-700 text-lg text-center leading-relaxed">
+            One bus replaces <span className="font-semibold text-blue-600">40 cars</span> on the road
+          </p>
+
+          <div className="h-px bg-gray-200"></div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 text-lg">PM2.5 Reduction</span>
+              <span className="text-gray-900 font-semibold text-lg">68%</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600 text-lg">NO₂ Reduction</span>
+              <span className="text-gray-900 font-semibold text-lg">82%</span>
+            </div>
+            {/* <div className="flex justify-between items-center">
+              <span className="text-gray-600 text-lg">Air Quality Index</span>
+              <span className="text-green-600 font-semibold text-lg">Good</span>
+            </div> */}
           </div>
 
-          <div className="pt-2 border-t border-gray-200">
-            <p className="text-gray-600 text-xs text-center leading-snug font-medium">
-              Every journey builds a greener future
-            </p>
-          </div>
+          <div className="h-px bg-gray-200"></div>
+
+          <p className="text-gray-700 text-lg text-center leading-relaxed">
+            <span className="font-semibold">2.5M</span> people breathing cleaner air daily
+          </p>
         </div>
       </div>
     </div>
