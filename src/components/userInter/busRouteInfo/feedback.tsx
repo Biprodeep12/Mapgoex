@@ -17,7 +17,7 @@ interface FeedbackProps {
     ratingRoute: number;
 }
 
-export const Feedback = ({ setAuthOpen, routeName, ratingRoute }: FeedbackProps) => {
+export const Feedback = ({ setAuthOpen, routeName }: FeedbackProps) => {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState(0);
@@ -59,13 +59,15 @@ export const Feedback = ({ setAuthOpen, routeName, ratingRoute }: FeedbackProps)
     setLoading(false);
   };
 
+  const AvgRev = reviews.reduce((acc, rev) => acc + rev.rating, 0) / (reviews.length || 1)
+
   return (
     <div className="flex flex-col gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
       <div className="flex flex-row items-center gap-2">
         <span className="text-2xl font-semibold text-gray-800">Reviews</span> 
         <span className="text-gray-500">-</span> 
         <div className="flex flex-row items-center gap-1"> 
-            <span className="text-xl font-medium">{ratingRoute}</span> 
+            <span className="text-xl font-medium">{AvgRev}</span> 
             <Star fill="currentColor" className="w-4 h-4 text-yellow-400" />      
         </div>
       </div>

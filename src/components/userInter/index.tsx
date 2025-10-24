@@ -10,6 +10,7 @@ import { Ai } from "./ai";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import GetRoute from "./getRoute";
 import { DrawerDest } from "./getRoute/drawerDest";
+import { CarbonEmissionCard } from "./landing";
 
 interface SearchData {
   coords: [number, number],
@@ -513,6 +514,9 @@ const UserInter = () => {
               <LocateFixed className="w-5 h-5"/>
           </button>
       </div>
+
+      <CarbonEmissionCard/>
+
       {openLocation &&
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-white/20 backdrop-blur-[2px]">
           <div className="flex flex-col gap-2 max-w-[355px] w-[90%] bg-white shadow-2xl rounded-2xl p-4 border-2 border-blue-200">
@@ -557,6 +561,7 @@ const UserInter = () => {
       }
       <BusRouteInfo setAuthOpen={setAuthOpen}/>
       {/* {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>} */}
+
     </>
   );
 };
