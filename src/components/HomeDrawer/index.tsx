@@ -1,8 +1,7 @@
 import { useMapContext } from "@/context/MapContext";
 import BottomDrawer from "../drawer";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { ArrowRight, Bus, Car, Leaf, Loader2, Sparkles, TrendingDown, X } from "lucide-react";
+import { ArrowRight, Bus, Loader2, X } from "lucide-react";
 import { allBusData, busDataType } from "../userInter";
 
 interface Props {
@@ -30,8 +29,8 @@ const HomeDrawer = ({handleBusClick ,loadingRoute, setOpenAvailableBuses}:Props)
 
   return (
     <BottomDrawer
-      minHeight={screenHeight * (1 / 2)}
-      maxHeight={screenHeight - 200}
+      minHeight={450}
+      maxHeight={screenHeight * (3 / 4)}
     >
       <div className="flex flex-col px-4 gap-4">
         <div className="text-2xl text-blue-500 font-bold flex flex-row justify-between items-center">

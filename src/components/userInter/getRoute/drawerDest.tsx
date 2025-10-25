@@ -2,7 +2,7 @@ import BottomDrawer from "@/components/drawer"
 import { useMapContext } from "@/context/MapContext"
 import { LocateFixed, MapPin, Share2, X } from "lucide-react"
 import { destinationType } from ".."
-import React from "react"
+import React, { useEffect, useState } from "react"
 
 interface Props {
     destinationData: destinationType
@@ -17,6 +17,7 @@ type step = {
 
 export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
     const { anonRouteGeoJSON,setAnonRouteGeoJSON, setUserLocation, setAnonLocation } = useMapContext()
+    const [screenHeight, setScreenHeight] = useState<number | null>(null);
 
     const steps = anonRouteGeoJSON?.features[0]?.properties?.segments[0]?.steps
 
@@ -38,6 +39,15 @@ export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
         setUserLocation(null);
         setAnonLocation(null);
     }
+
+    useEffect(() => {
+        setScreenHeight(window.innerHeight);
+
+        const handleResize = () => setScreenHeight(window.innerHeight);
+        window.addEventListener("resize", handleResize);
+
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     if(!anonRouteGeoJSON) return;
 
@@ -107,7 +117,7 @@ export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
             </div>
         </div>
         
-        <BottomDrawer>
+        <BottomDrawer maxHeight={screenHeight? screenHeight : 700}>
             <div className="flex flex-col pb-10">
                 <div className="px-4 pb-4">
                     <div className="flex items-center justify-between mb-4">

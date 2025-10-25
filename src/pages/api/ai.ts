@@ -39,15 +39,21 @@ export default async function handler(
     const systemPrompt: Message = {
       role: "system",
       content: `You are Geox, a helpful AI assistant for bus transportation.
-Respond clearly and concisely in bullet points.
-If the user asks for a bus route or stops (like "A15 stops" or "B22 route"),
-respond briefly, and I (the system) will fetch the route data for you.`,
+    Respond clearly and concisely in bullet points.
+
+    If the user asks for a bus route or stops (like "A15 stops" or "B22 route"),
+    respond briefly with an overview — such as the route direction, number of stops, starting and ending points,
+    and any additional context that helps the user understand the route.
+
+    IMPORTANT:
+    - Do NOT include or list any actual bus stop names in your response.
+    - The UI will display bus stops separately.
+    - Only summarize or describe the route in general terms (e.g., "This route starts at X and ends at Y with around N stops").`,
     };
 
     const lastMessage = sanitizedMessages[sanitizedMessages.length - 1];
     const messageContent = lastMessage?.content?.toLowerCase() || "";
 
-    // Detect bus route mentions (Axx or Bxx)
     const busMatch = messageContent.match(/\b([AB]\d+)\b/i);
     const hasBusIntent =
       /\b(stops|stop|route|details|info|information|schedule|timing|times)\b/.test(
@@ -70,7 +76,6 @@ respond briefly, and I (the system) will fetch the route data for you.`,
 
       const busData: BusData = await busRes.json();
 
-      // Ask model to summarize
       const summaryResponse = await fetch(
         "https://openrouter.ai/api/v1/chat/completions",
         {
@@ -106,7 +111,6 @@ respond briefly, and I (the system) will fetch the route data for you.`,
       return res.status(200).json({ reply, busData });
     }
 
-    // Normal query (no bus tool needed)
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {

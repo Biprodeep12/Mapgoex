@@ -32,6 +32,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
   const { unsubscribe, setBusPos, setBusStopsETA, setRouteId, trackingBusStop } = useBusSimulator()
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
+  const [screenHeight, setScreenHeight] = useState<number | null>(null);
 
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +85,15 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
 
   const totalStops = selectedBusRouteInfo?.busStops?.length || 0;
   const distance = (routeGeoJSON?.features[0]?.properties?.summary?.distance) / 1000
+
+  useEffect(() => {
+    setScreenHeight(window.innerHeight);
+
+    const handleResize = () => setScreenHeight(window.innerHeight);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   if (!selectedBus || !routeGeoJSON) return null;
 
@@ -162,7 +172,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
       </div>
     )}
 
-    <BottomDrawer>
+    <BottomDrawer maxHeight={screenHeight? screenHeight : 700}>
       <div className="flex flex-col w-full overflow-hidden">
 
         <div ref={topRef} className="px-4 pb-4">
