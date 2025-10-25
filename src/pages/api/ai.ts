@@ -6,6 +6,29 @@ interface Message {
   content: string;
 }
 
+interface ToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
+interface AssistantMessage extends Message {
+  role: "assistant";
+  tool_calls?: ToolCall[];
+  text?: string;
+  message?: string;
+  response?: string;
+}
+
+interface ToolMessage {
+  role: "tool";
+  tool_call_id: string;
+  content: string;
+}
+
 interface AIResponse {
   reply: string;
   busData?: BusData | null;
@@ -36,80 +59,61 @@ export default async function handler(
       .filter((m) => m.content.trim().length > 0)
       .slice(-20);
 
+    if (sanitizedMessages.length === 0) {
+      return res.status(400).json({ error: "No valid messages provided" });
+    }
+
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "getBusData",
+          description:
+            "Get detailed bus stop information for a specific route. ONLY use this when users explicitly ask for bus stops, route details, or stop information for a particular bus route (like 'A15 stops', 'B22 route details', 'show me A15 bus stops'). Do NOT use for general bus questions.",
+          parameters: {
+            type: "object",
+            properties: {
+              busId: {
+                type: "string",
+                description:
+                  "The bus route ID (e.g., 'A15', 'B22', 'A1', 'B5'). Extract this from user queries specifically asking for bus stops or route details.",
+                pattern: "^[AB]\\d+$",
+              },
+            },
+            required: ["busId"],
+          },
+        },
+      },
+    ];
+
     const systemPrompt: Message = {
       role: "system",
-      content: `You are Geox, a helpful AI assistant for bus transportation.
-    Respond clearly and concisely in bullet points.
-
-    If the user asks for a bus route or stops (like "A15 stops" or "B22 route"),
-    respond briefly with an overview — such as the route direction, number of stops, starting and ending points,
-    and any additional context that helps the user understand the route.
-
-    IMPORTANT:
-    - Do NOT include or list any actual bus stop names in your response.
-    - The UI will display bus stops separately.
-    - Only summarize or describe the route in general terms (e.g., "This route starts at X and ends at Y with around N stops").`,
+      content:
+        "You are Geox, a helpful AI assistant for bus transportation. Your role is to:\n\n1. Help users with general bus information, routes, and travel guidance\n2. Provide clear, concise responses in bullet points\n3. ONLY use the getBusData tool when users specifically ask for bus stops, route details, or stop information for a particular route (like 'A15 stops', 'B22 route details', 'show me A15 bus stops')\n4. For general questions about bus routes, schedules, or transportation, respond directly without using tools\n5. Be friendly, helpful, and keep responses brief",
     };
 
-    const lastMessage = sanitizedMessages[sanitizedMessages.length - 1];
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: "Missing OPENROUTER_API_KEY" });
+    }
+
+    const lastMessage = sanitizedMessages.at(-1);
     const messageContent = lastMessage?.content?.toLowerCase() || "";
 
-    const busMatch = messageContent.match(/\b([AB]\d+)\b/i);
-    const hasBusIntent =
-      /\b(stops|stop|route|details|info|information|schedule|timing|times)\b/.test(
-        messageContent
-      ) && !!busMatch;
+    const busStopRequestPatterns = [
+      /\b(A|B)\d+\s+(stops?|route|details?|info|information)\b/,
+      /\b(stops?|stop)\s+(for|of|on)\s+(A|B)\d+\b/,
+      /\bshow\s+(me\s+)?(A|B)\d+\s+(stops?|route)\b/,
+      /\b(A|B)\d+\s+(schedule|times?|timings?)\b/,
+    ];
 
-    if (hasBusIntent && busMatch) {
-      const busId = busMatch[1].toUpperCase();
-      console.log("Detected bus intent for:", busId);
+    const hasExplicitBusRequest = busStopRequestPatterns.some((p) =>
+      p.test(messageContent)
+    );
 
-      const origin = req.headers.origin || "http://localhost:3000";
-      const busRes = await fetch(`${origin}/api/bus/${busId}`);
+    const busMention = messageContent.match(/\b([AB]\d+)\b/i);
+    const busId = busMention ? busMention[1].toUpperCase() : null;
 
-      if (!busRes.ok) {
-        return res.status(200).json({
-          reply: `Sorry, I couldn't find bus route ${busId}.`,
-          busData: null,
-        });
-      }
-
-      const busData: BusData = await busRes.json();
-
-      const summaryResponse = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "meta-llama/llama-3.3-8b-instruct:free",
-            messages: [
-              systemPrompt,
-              ...sanitizedMessages,
-              {
-                role: "system",
-                content: `Here is the bus route data for ${busId}: ${JSON.stringify(
-                  busData
-                )}. Summarize it for the user in bullet points.`,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          }),
-        }
-      );
-
-      const summaryData = await summaryResponse.json();
-      const reply =
-        summaryData?.choices?.[0]?.message?.content ||
-        `Here are the stops for route ${busId}:` ||
-        "Sorry, something went wrong.";
-
-      return res.status(200).json({ reply, busData });
-    }
+    const needsToolCall = hasExplicitBusRequest && busId;
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -120,15 +124,114 @@ export default async function handler(
       body: JSON.stringify({
         model: "meta-llama/llama-3.3-8b-instruct:free",
         messages: [systemPrompt, ...sanitizedMessages],
+        ...(needsToolCall ? { tools, tool_choice: "auto" } : {}),
         temperature: 0.7,
         max_tokens: 1000,
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("OpenRouter API error:", errorText);
+      return res
+        .status(response.status)
+        .json({ error: "Failed to get AI response", detail: errorText });
+    }
+
     const data = await response.json();
+    const choice = data?.choices?.[0];
+    const assistantMessage = choice?.message as AssistantMessage | undefined;
+
+    if (!assistantMessage) {
+      return res.status(500).json({ error: "Invalid AI response" });
+    }
+
+    if (assistantMessage.tool_calls?.length) {
+      const toolCall = assistantMessage.tool_calls[0];
+      if (toolCall.function.name !== "getBusData") {
+        return res.status(400).json({ error: "Unknown tool call" });
+      }
+
+      let parsedBusId: string | null = null;
+      try {
+        const args = JSON.parse(toolCall.function.arguments || "{}");
+        parsedBusId = args.busId?.toUpperCase?.() || null;
+      } catch (err) {
+        console.error("Tool call parse error:", err);
+      }
+
+      const finalBusId = parsedBusId || busId;
+      if (!finalBusId || !/^[AB]\d+$/i.test(finalBusId)) {
+        return res.status(400).json({
+          error:
+            "Invalid or missing bus route ID. Please specify like A15 or B22.",
+        });
+      }
+
+      try {
+        const origin = req.headers.origin || "http://localhost:3000";
+        const busRes = await fetch(`${origin}/api/bus/${finalBusId}`);
+        if (!busRes.ok) {
+          return res.status(200).json({
+            reply: `Sorry, I couldn't find route ${finalBusId}.`,
+            busData: null,
+          });
+        }
+
+        const busData = await busRes.json();
+
+        const toolMessage: ToolMessage = {
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(busData),
+        };
+
+        const followUpRes = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "meta-llama/llama-3.3-8b-instruct:free",
+              messages: [
+                systemPrompt,
+                ...sanitizedMessages,
+                assistantMessage,
+                toolMessage,
+              ],
+              temperature: 0.7,
+              max_tokens: 1000,
+            }),
+          }
+        );
+
+        const followUpData = await followUpRes.json();
+        const finalReply =
+          followUpData?.choices?.[0]?.message?.content ||
+          `Here are the route details for ${finalBusId}.`;
+
+        return res.status(200).json({
+          reply: finalReply,
+          busData,
+        });
+      } catch (err) {
+        console.error("Error fetching route info:", err);
+        return res.status(200).json({
+          reply: `Sorry, I couldn’t fetch data for route ${finalBusId}.`,
+          busData: null,
+        });
+      }
+    }
+
     const reply =
-      data?.choices?.[0]?.message?.content ||
-      "Sorry, I couldn't generate a response.";
+      assistantMessage.content ||
+      assistantMessage.text ||
+      assistantMessage.message ||
+      assistantMessage.response ||
+      "Sorry, I couldn’t generate a response.";
 
     return res.status(200).json({ reply, busData: null });
   } catch (error) {
