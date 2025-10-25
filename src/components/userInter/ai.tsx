@@ -57,15 +57,34 @@ export const Ai = ({setOpenAi, openAi, setDestinationData}:props) => {
 
       const data = await res.json();
 
-      if (data.reply || data.busData) {
+      if (!res.ok) {
+        console.error("API Error:", data);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.reply || "", data: data.busData || null },
+          { role: "assistant", content: `Error: ${data.error || "Something went wrong"}`, data: null },
+        ]);
+        return;
+      }
+
+      if (data.reply) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data.reply, data: data.busData || null },
+        ]);
+      } else {
+        console.error("No reply in response:", data);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Sorry, I couldn't generate a response.", data: null },
         ]);
       }
 
     } catch (err) {
       console.error("Error:", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, there was an error connecting to the server.", data: null },
+      ]);
     } finally {
       setLoading(false);
     }
