@@ -59,7 +59,7 @@ export const Feedback = ({ setAuthOpen, routeName }: FeedbackProps) => {
     setLoading(false);
   };
 
-  const AvgRev = reviews.reduce((acc, rev) => acc + rev.rating, 0) / (reviews.length || 1)
+  const AvgRev = (reviews.reduce((acc, rev) => acc + rev.rating, 0) / (reviews.length || 1)).toFixed(1);
 
   return (
     <div className="flex flex-col gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
