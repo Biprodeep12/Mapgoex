@@ -221,7 +221,7 @@ const tools: Tool[] = [
     type: "function",
     function: {
       name: "getBusData",
-      description: "Get detailed bus stop information for a specific route. Use this when users ask about bus stops, route details, schedule, or information for a particular bus route (like 'A15 stops', 'B22 route details', 'show me A15 bus stops', 'tell me about bus A15', 'information about B22'). IMPORTANT: The bus stops data will be displayed separately in the UI - do not list individual stops in your response.",
+      description: "Get detailed bus stop information for a specific route. Use this when users ask about bus stops, route details, schedule, or information for a particular bus route (like 'A15 stops', 'B22 route details', 'show me A15 bus stops', 'tell me about bus A15', 'information about B22').",
       parameters: {
         type: "object",
         properties: {
