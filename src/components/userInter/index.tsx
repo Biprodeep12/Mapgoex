@@ -326,17 +326,26 @@ const UserInter = () => {
         </div>
 
         <div className="absolute hidden max-[500px]:block right-1.5 -bottom-[45px]">
-            <button
-                onClick={()=>{
-                  if(userLocation==null){
-                    setOpenLocation(true)
-                  } else {
-                    handleGetLocation();
-                  }}}
-                className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
-            >
-                <LocateFixed className="w-5 h-5"/>
-            </button>
+          {!userLocation ?
+          <button
+              onClick={()=>{
+                if(userLocation==null){
+                  setOpenLocation(true)
+                } else {
+                  handleGetLocation();
+                }}}
+              className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
+          >
+              <LocateFixed className="w-5 h-5"/>
+          </button>
+          :
+          <button
+              onClick={()=>setUserLocation(null)}
+              className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
+          >
+              <X className="w-5 h-5"/>
+          </button>
+          }
         </div>
 
           <div className="flex flex-col gap-3 w-full min-md:fixed min-md:max-w-[400px] right-5 top-5">
@@ -485,7 +494,7 @@ const UserInter = () => {
               <Bus className="inline w-8 h-8 mr-2 mb-1"/>
               Available Bus Routes
             </div>
-            <button onClick={()=>setOpenAvailableBuses(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors group bg-gray-100">
+            <button onClick={()=>setOpenAvailableBuses(false)} className="p-2 hover:bg-gray-100 cursor-pointer rounded-full transition-colors group bg-gray-100">
               <X className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
             </button>
           </div>
@@ -513,7 +522,7 @@ const UserInter = () => {
                 </button>
               ))}
           </div>
-          <button onClick={() => window.open("/busAdmin", "_blank")} className="cursor-pointer py-2 px-3 text-white bg-blue-400 rounded-lg text-lg flex flex-row gap-2 justify-center items-center">
+          <button onClick={() => window.open("/busAdmin", "_blank")} className="cursor-pointer py-2 px-3 text-white bg-blue-400 hover:bg-blue-500 rounded-lg text-lg flex flex-row gap-2 justify-center items-center">
             Go To Bus Fleet Control
             <ArrowRight className="w-5 h-5"/>
           </button>
@@ -559,6 +568,7 @@ const UserInter = () => {
       </div> */}
 
       <div className="fixed max-[500px]:hidden right-2 bottom-55">
+          {!userLocation ?
           <button
               onClick={()=>{
                 if(userLocation==null){
@@ -570,6 +580,14 @@ const UserInter = () => {
           >
               <LocateFixed className="w-5 h-5"/>
           </button>
+          :
+          <button
+              onClick={()=>setUserLocation(null)}
+              className="rounded-full cursor-pointer p-2 bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
+          >
+              <X className="w-5 h-5"/>
+          </button>
+          }
       </div>
 
       {!(destinationData.finishActive || destinationData.startActive) && <CarbonEmissionCard input={searchInput} setOpenAvailableBuses={setOpenAvailableBuses} openAvailableBuses={openAvailableBuses}/>}

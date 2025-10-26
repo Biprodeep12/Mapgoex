@@ -9,12 +9,12 @@ interface props {
 }
 
 export function CarbonEmissionCard({input, openAvailableBuses, setOpenAvailableBuses}:props) {
-  const { anonRouteGeoJSON, routeGeoJSON } = useMapContext();
+  const { anonRouteGeoJSON, routeGeoJSON, userLocation, anonLocation } = useMapContext();
 
   if (anonRouteGeoJSON || routeGeoJSON) return null;
   
   return (
-    <div className={`fixed ${(input.length>0) || openAvailableBuses?'translate-y-200 opacity-0':'translate-y-0 opacity-100'} transition-all duration-300 z-3 max-[500px]:bottom-0 bottom-5 min-[500px]:left-5 w-full min-[500px]:max-w-[340px]`}>
+    <div className={`fixed ${(input.length>0) || openAvailableBuses || userLocation || anonLocation?'translate-y-200 opacity-0':'translate-y-0 opacity-100'} transition-all duration-300 z-3 max-[500px]:bottom-0 bottom-5 min-[500px]:left-5 w-full min-[500px]:max-w-[340px]`}>
 
       <div className="grid grid-cols-3 items-end place-items-center-safe w-full **:transition-all **:duration-300 **:ease-in-out">
         <button className="group landingsecond cursor-pointer bg-white border-4 border-blue-500 hover:bg-blue-100 rounded-full h-20 w-20 shrink my-3 drop-shadow-2xl flex items-center justify-center">
