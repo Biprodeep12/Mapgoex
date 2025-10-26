@@ -69,7 +69,7 @@ interface OpenRouterPayload {
   model: string;
   messages: Message[];
   temperature: number;
-  max_tokens: number;
+  max_tokens: 1000;
   tools?: Tool[];
   tool_choice?: "auto" | "none";
 }
@@ -187,33 +187,12 @@ async function fetchBusData(busId: string, origin: string): Promise<BusData> {
   return await busRes.json() as BusData;
 }
 
-function detectBusRequest(messageContent: string): { needsToolCall: boolean; busId: string | null } {
+function detectBusRequest(messageContent: string): { busId: string | null } {
   const content = messageContent.toLowerCase();
-  
-  // More flexible patterns to catch various ways users might ask for bus information
-  const busRequestPatterns = [
-    // Pattern 1: Direct requests for stops/info
-    /\b(A|B)\d+\s+(stops?|route|details?|info|information|schedule|times?|timings?)\b/,
-    /\b(stops?|stop|route|details?|info|information)\s+(for|of|on|about)\s+(the\s+)?(A|B)\d+\b/,
-    /\bshow\s+(me\s+)?(the\s+)?(A|B)\d+\s+(stops?|route|details?|info)\b/,
-    
-    // Pattern 2: "Tell me about bus A15" type queries
-    /\b(tell me about|information about|details about|what about|how about)\s+(the\s+)?(bus\s+)?(A|B)\d+\b/,
-    /\b(bus\s+)?(A|B)\d+\s+(information|details|stops|route|schedule)\b/,
-    
-    // Pattern 3: General queries mentioning specific bus routes
-    /\b(A|B)\d+\b.*\b(stops?|route|details?|info|information|schedule|where|when|how)\b/,
-    /\b(stops?|route|details?|info).*\b(A|B)\d+\b/,
-  ];
-
-  const hasBusRequest = busRequestPatterns.some(p => p.test(content));
   const busMention = content.match(/\b([AB]\d+)\b/i);
   const busId = busMention ? busMention[1].toUpperCase() : null;
 
-  return {
-    needsToolCall: hasBusRequest && !!busId,
-    busId
-  };
+  return { busId };
 }
 
 const tools: Tool[] = [
@@ -221,13 +200,13 @@ const tools: Tool[] = [
     type: "function",
     function: {
       name: "getBusData",
-      description: "Get detailed bus stop information for a specific route. Use this when users ask about bus stops, route details, schedule, or information for a particular bus route (like 'A15 stops', 'B22 route details', 'show me A15 bus stops', 'tell me about bus A15', 'information about B22').",
+      description: "Get bus route information including stops, schedule, and route details. Use this when users ask about specific bus routes.",
       parameters: {
         type: "object",
         properties: {
           busId: {
             type: "string",
-            description: "The bus route ID (e.g., 'A15', 'B22', 'A1', 'B5'). Extract this from user queries asking for bus information.",
+            description: "The bus route ID like A15 or B22",
             pattern: "^[AB]\\d+$",
           },
         },
@@ -239,23 +218,16 @@ const tools: Tool[] = [
 
 const systemPrompt: Message = {
   role: "system",
-  content: `You are Geox, a bus transportation assistant. CRITICAL RULES:
+  content: `You are Geox, a bus transportation assistant.
 
-1. When users ask about specific bus routes (A15, B22, etc.), use getBusData tool
-2. AFTER receiving bus data, provide route overview but NEVER list bus stops
-3. Bus stops are displayed separately in UI - your response should complement this
-4. Focus on:
-   - Route duration and frequency
-   - Main areas served
-   - Travel tips
-   - Service hours
-   - General route characteristics
-5. Example responses:
-   ✅ "Route A15 takes about 45 minutes end-to-end, running every 15 minutes during peak hours..."
-   ✅ "The B22 serves the downtown area connecting the university to the business district..."
-   ❌ "Stops: Main St, Oak Ave, Park Rd, University Campus..." (NEVER DO THIS)
+IMPORTANT INSTRUCTIONS:
+1. When users ask about specific bus routes (A15, B22, etc.), use the getBusData tool
+2. After the tool returns data, provide a helpful summary of the route
+3. NEVER list individual bus stops - they are displayed separately in the UI
+4. Focus on overall route information, frequency, travel time, and key areas served
+5. Be friendly and helpful
 
-Remember: Bus stops display is handled by UI. Provide insights, not lists.`
+Example good response: "The A15 route runs from Downtown to the University campus, taking approximately 30-40 minutes. It operates every 15 minutes during peak hours and serves major areas like the City Center and Medical District."`
 };
 
 export default async function handler(
@@ -289,17 +261,14 @@ export default async function handler(
       return res.status(400).json({ error: "No valid messages provided" });
     }
 
-    // Always try to detect bus requests, but let the AI decide when to use the tool
     const { busId: detectedBusId } = detectBusRequest(lastMessage.content);
     const hasBusMention = !!detectedBusId;
 
-    // For bus-related queries, include tools and let AI decide
-    const shouldIncludeTools = hasBusMention;
-
+    // First API call - let AI decide if it wants to use tools
     const openRouterData = await callOpenRouter(
       [systemPrompt, ...sanitizedMessages],
-      shouldIncludeTools ? tools : undefined,
-      shouldIncludeTools ? "auto" : undefined
+      hasBusMention ? tools : undefined,
+      hasBusMention ? "auto" : undefined
     );
 
     const assistantMessage = openRouterData.choices?.[0]?.message;
@@ -308,7 +277,7 @@ export default async function handler(
       return res.status(500).json({ error: "Invalid AI response format" });
     }
 
-    // Handle tool calls if the AI decided to use them
+    // Check if AI wants to call a tool
     if (assistantMessage.tool_calls?.length) {
       const toolCall = assistantMessage.tool_calls[0];
       
@@ -316,35 +285,39 @@ export default async function handler(
         return res.status(400).json({ error: "Unknown tool call requested" });
       }
 
+      // Parse the tool arguments
       const parsedArgs = parseToolArguments(toolCall.function.arguments);
       const parsedBusId = parsedArgs.busId?.toUpperCase() || null;
       const finalBusId = parsedBusId || detectedBusId;
       
       if (!isValidBusId(finalBusId)) {
         return res.status(400).json({
-          error: "Invalid or missing bus route ID. Please specify like A15 or B22.",
+          error: "Invalid or missing bus route ID",
         });
       }
 
       try {
+        // Execute the tool call - fetch actual bus data
         const origin = req.headers.origin || "http://localhost:3000";
         const busData = await fetchBusData(finalBusId, origin);
 
+        // Create tool message with the actual bus data
         const toolMessage: ToolMessage = {
           role: "tool",
           tool_call_id: toolCall.id,
           content: JSON.stringify(busData),
         };
 
+        // Second API call - send the tool result back to AI for final response
         const followUpData = await callOpenRouter([
           systemPrompt,
           ...sanitizedMessages,
-          assistantMessage,
-          toolMessage,
+          assistantMessage, // This contains the tool call
+          toolMessage,      // This contains the tool result
         ]);
 
         const finalReply = followUpData.choices?.[0]?.message?.content || 
-          `Here are the route details for ${finalBusId}.`;
+          `I've retrieved the route information for ${finalBusId}.`;
 
         return res.status(200).json({
           reply: finalReply,
@@ -354,33 +327,28 @@ export default async function handler(
       } catch (error) {
         console.error("Error processing bus request:", error);
         return res.status(200).json({
-          reply: `Sorry, I couldn't fetch data for route ${finalBusId}. Please check if the route exists.`,
+          reply: `Sorry, I couldn't fetch data for route ${finalBusId}.`,
           busData: null,
         });
       }
     }
 
-    // No tool call was made - return regular response
-    const reply = assistantMessage.content || "Sorry, I couldn't generate a response.";
-
-    // Even if no tool was called, check if we detected a bus ID and try to fetch data
+    // No tool call was made - check if we should still fetch bus data
+    let busData: BusData | null = null;
     if (detectedBusId && isValidBusId(detectedBusId)) {
       try {
         const origin = req.headers.origin || "http://localhost:3000";
-        const busData = await fetchBusData(detectedBusId, origin);
-        return res.status(200).json({ 
-          reply, 
-          busData 
-        });
+        busData = await fetchBusData(detectedBusId, origin);
       } catch (error) {
         console.error("Error fetching bus data:", error);
-        // Still return the AI response even if bus data fetch fails
       }
     }
 
+    const reply = assistantMessage.content || "Sorry, I couldn't generate a response.";
+
     return res.status(200).json({ 
       reply, 
-      busData: null 
+      busData 
     });
 
   } catch (error) {

@@ -531,7 +531,7 @@ const UserInter = () => {
           </button>
       </div>
 
-      <CarbonEmissionCard input={searchInput} setOpenAvailableBuses={setOpenAvailableBuses} openAvailableBuses={openAvailableBuses}/>
+      {!(destinationData.finishActive || destinationData.startActive) && <CarbonEmissionCard input={searchInput} setOpenAvailableBuses={setOpenAvailableBuses} openAvailableBuses={openAvailableBuses}/>}
 
       {openAvailableBuses && <HomeDrawer handleBusClick={handleBusClick} loadingRoute={loadingRoute} setOpenAvailableBuses={setOpenAvailableBuses}/>}
 
