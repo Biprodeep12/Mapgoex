@@ -78,7 +78,6 @@ interface ToolCallArguments {
   busId?: string;
 }
 
-// Validation functions
 function isValidBusRequest(body: unknown): body is BusRequest {
   if (!body || typeof body !== "object") {
     return false;
@@ -140,7 +139,6 @@ function parseToolArguments(argsString: string): ToolCallArguments {
   }
 }
 
-// API functions
 async function callOpenRouter(
   messages: Message[], 
   tools?: Tool[], 
@@ -264,7 +262,6 @@ export default async function handler(
     const { busId: detectedBusId } = detectBusRequest(lastMessage.content);
     const hasBusMention = !!detectedBusId;
 
-    // First API call - let AI decide if it wants to use tools
     const openRouterData = await callOpenRouter(
       [systemPrompt, ...sanitizedMessages],
       hasBusMention ? tools : undefined,
@@ -277,7 +274,6 @@ export default async function handler(
       return res.status(500).json({ error: "Invalid AI response format" });
     }
 
-    // Check if AI wants to call a tool
     if (assistantMessage.tool_calls?.length) {
       const toolCall = assistantMessage.tool_calls[0];
       
@@ -285,7 +281,6 @@ export default async function handler(
         return res.status(400).json({ error: "Unknown tool call requested" });
       }
 
-      // Parse the tool arguments
       const parsedArgs = parseToolArguments(toolCall.function.arguments);
       const parsedBusId = parsedArgs.busId?.toUpperCase() || null;
       const finalBusId = parsedBusId || detectedBusId;
@@ -297,23 +292,20 @@ export default async function handler(
       }
 
       try {
-        // Execute the tool call - fetch actual bus data
         const origin = req.headers.origin || "http://localhost:3000";
         const busData = await fetchBusData(finalBusId, origin);
 
-        // Create tool message with the actual bus data
         const toolMessage: ToolMessage = {
           role: "tool",
           tool_call_id: toolCall.id,
           content: JSON.stringify(busData),
         };
 
-        // Second API call - send the tool result back to AI for final response
         const followUpData = await callOpenRouter([
           systemPrompt,
           ...sanitizedMessages,
-          assistantMessage, // This contains the tool call
-          toolMessage,      // This contains the tool result
+          assistantMessage,
+          toolMessage,
         ]);
 
         const finalReply = followUpData.choices?.[0]?.message?.content || 
@@ -333,7 +325,6 @@ export default async function handler(
       }
     }
 
-    // No tool call was made - check if we should still fetch bus data
     let busData: BusData | null = null;
     if (detectedBusId && isValidBusId(detectedBusId)) {
       try {
