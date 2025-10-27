@@ -69,7 +69,7 @@ export const BusSimulatorProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const socket = io("https://maggeoxserver.onrender");
+    const socket = io("https://maggeoxserver.onrender.com");
     socketRef.current = socket;
 
     socket.on("connect", () => {
