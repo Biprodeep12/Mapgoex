@@ -1,12 +1,12 @@
 import { useMapContext } from "@/context/MapContext";
-import { X, Bus, LoaderCircle, EllipsisVertical, Share2, BusFront, IndianRupee } from "lucide-react";
+import { X, Bus, LoaderCircle, EllipsisVertical, BusFront, IndianRupee } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
 import WeatherIcon from "@/utils/weather";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import { Feedback } from "./feedback";
-// import { TicketSideBar } from "./TicketSideBar";
+import { TicketSideBar } from "./TicketSideBar";
 
 interface WeatherData {
   name: string;
@@ -34,6 +34,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
   const [screenHeight, setScreenHeight] = useState<number | null>(null);
+  const [openTicket, setOpenTicket] = useState(false);
 
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -104,7 +105,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
 
   return (
     <>
-    {/* <TicketSideBar/> */}
+    <TicketSideBar openTicket={openTicket} setOpenTicket={setOpenTicket}/>
     <div className="fixed md:flex hidden flex-col md:top-5 md:left-5 md:bottom-5 max-md:bottom-0 md:max-w-[400px] w-full bg-white max-md:rounded-t-3xl md:rounded-xl drop-shadow-2xl border border-gray-100">
       <button
         onClick={ClearAllCauses} 
@@ -185,9 +186,10 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
               <div className="text-[22px] font-bold text-gray-900">{selectedBus.id}</div>
             </div>
             <div className="flex flex-row gap-4 items-center">
-              <button 
+              <button
+                onClick={() => setOpenTicket(true)}
                 className="p-2 hover:bg-green-200 rounded-full transition-colors group bg-green-100"
-                aria-label="Close route info"
+                aria-label="Open ticket sidebar"
               >
                 <IndianRupee className="w-5 h-5 text-green-500 group-hover:text-green-700" />
               </button>

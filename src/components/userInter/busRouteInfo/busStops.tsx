@@ -13,7 +13,7 @@ export const BusStops = () => {
 
     return(
         <>
-            {selectedBusRouteInfo?.busStops?.map((stop, idx) => { 
+            {selectedBusRouteInfo?.busStops?.map((stop, idx) => {
               const onClickStop = () => {
                 setMapCenter({center: stop.coords,zoom: 15})
                 setTrackingBusStop({busStopID: idx, active: true})
