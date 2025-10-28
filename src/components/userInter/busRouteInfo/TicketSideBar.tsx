@@ -1,6 +1,7 @@
 import { useMapContext } from "@/context/MapContext";
+import { useAuth } from "@/context/userContext";
 import axios from "axios";
-import { ArrowLeft, ArrowRight, BusFront, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BusFront, CircleCheckBig, Loader2, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
@@ -26,9 +27,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       anonRouteGeoJSON, 
       setMapCenter 
     } = useMapContext();
+    const { user } = useAuth()
     const [searchQuery, setSearchQuery] = useState("");
     const [ticketCount, setTicketCount] = useState(1);
     const [loadingRouteMap, setLoadingRouteMap] = useState(false);
+    const [checkout, setCheckout] = useState(false);
     const ContentRef = useRef<{ sourceLocation: [number, number]; anonLocation: [number, number]}>(null)
 
     const [stops, setStops] = useState<TicketSideBarState>({
@@ -164,6 +167,30 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       s.name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
+  const CheckOut = async() => {
+    if(!user) return;
+    setCheckout(true);
+    const uuid = user?.uid;
+
+    const Ticket = {
+      count: ticketCount,
+      source: stops.sourceStop,
+      destination: stops.destStop,
+      payment: totalPrice,
+    }    
+
+    await fetch("/api/book/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uuid, ticket: Ticket  }),
+    });
+
+    setTimeout(()=>{
+      setCheckout(false);
+      CancelTicket();
+    },2000)
+  }
+
   useEffect(()=>{
     if(!openTicket && (stops.destStop.length==0 || stops.sourceStop.length==0)){
       setAnonRouteGeoJSON(null);
@@ -187,6 +214,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       {isStopActive && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-501" />
       )}
+
+      <div className={`fixed inset-0 bg-white z-502 flex items-center justify-center transition-all duration-200 ${checkout?'translate-y-0':'-translate-y-300'}`}>
+        <CircleCheckBig fill="lightgreen" className={`text-green-400 w-10 h-10 ${checkout?'paySpin':''}`}/>
+        <span className="text-nowrap translate-y-10 absolute top-1/2 left-1/2 -translate-1/2 text-green-500 font-bold text-3xl">Payed ₹{totalPrice}</span>
+      </div>
 
       <div
         className={`fixed top-0 w-full h-3/4 px-2 py-3 bg-white transition-all duration-200 hidden max-[500px]:flex flex-col gap-3 z-502 ${
@@ -335,7 +367,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                 </button>
                 <div className="fixed bottom-0 left-0 right-0 grid grid-cols-2 border-t border-gray-300 text-lg font-bold">
                     <button onClick={CancelTicket} className="h-12">Cancel</button>
-                    <button className="h-12 bg-gray-200 text-green-500">Pay ₹{totalPrice}</button>
+                    <button onClick={CheckOut} className="h-12 bg-gray-200 text-green-500">Pay ₹{totalPrice}</button>
                 </div>
               </>)
             :
