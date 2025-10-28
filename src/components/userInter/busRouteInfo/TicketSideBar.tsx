@@ -1,7 +1,7 @@
 import { useMapContext } from "@/context/MapContext";
 import axios from "axios";
 import { ArrowLeft, ArrowRight, BusFront, Loader2, Search, X } from "lucide-react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   openTicket: boolean;
@@ -16,11 +16,20 @@ interface TicketSideBarState {
 }
 
 export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
-    const { selectedBusRouteInfo, userLocation, anonLocation, setUserLocation, setAnonLocation, setAnonRouteGeoJSON, setMapCenter } = useMapContext();
+    const { 
+      selectedBusRouteInfo, 
+      anonLocation,
+      setAnonLocation, 
+      sourceLocation, 
+      setSourceLocation, 
+      setAnonRouteGeoJSON, 
+      anonRouteGeoJSON, 
+      setMapCenter 
+    } = useMapContext();
     const [searchQuery, setSearchQuery] = useState("");
     const [ticketCount, setTicketCount] = useState(1);
     const [loadingRouteMap, setLoadingRouteMap] = useState(false);
-    const ContentRef = useRef<{ userLocation: [number, number]; anonLocation: [number, number]}>(null)
+    const ContentRef = useRef<{ sourceLocation: [number, number]; anonLocation: [number, number]}>(null)
 
     const [stops, setStops] = useState<TicketSideBarState>({
         sourceStop: "",
@@ -31,17 +40,20 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
     const fetchRoute = useCallback(
         async () => {
-            if (!userLocation || !anonLocation) return;
-            if(JSON.stringify(ContentRef.current) === JSON.stringify({userLocation,anonLocation})) return;
+            if (!sourceLocation || !anonLocation) return;
+            if(JSON.stringify(ContentRef.current) === JSON.stringify({sourceLocation,anonLocation})){
+              setOpenTicket(false)
+              return;
+            };
 
-            ContentRef.current = {userLocation,anonLocation};
+            ContentRef.current = {sourceLocation,anonLocation};
 
             setLoadingRouteMap(true);
 
             try {
                 const res = await axios.post(
                 `https://api.openrouteservice.org/v2/directions/driving-car/geojson`,
-                { coordinates: [userLocation, anonLocation] },
+                { coordinates: [sourceLocation, anonLocation] },
                 {
                     headers: {
                     Authorization:
@@ -53,8 +65,8 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
                 setAnonRouteGeoJSON(res.data);        
 
-                const centerLng = (userLocation[0] + anonLocation[0]) / 2;
-                const centerLat = (userLocation[1] + anonLocation[1]) / 2;
+                const centerLng = (sourceLocation[0] + anonLocation[0]) / 2;
+                const centerLat = (sourceLocation[1] + anonLocation[1]) / 2;
 
                 setMapCenter({
                 center: [centerLng, centerLat],
@@ -67,7 +79,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                 setLoadingRouteMap(false);
             }
         },
-        [userLocation, anonLocation]
+        [sourceLocation, anonLocation]
     );
 
     const totalPrice = useMemo(() => {
@@ -121,7 +133,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         destActive: false,
         }));
         if(stops.sourceActive) {
-            setUserLocation(coords);
+            setSourceLocation(coords);
         } else if(stops.destActive) {
             setAnonLocation(coords);
         }
@@ -141,6 +153,10 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         sourceStop: ''
     }))
     setTicketCount(1);
+    setAnonRouteGeoJSON(null);
+    setOpenTicket(true);
+    setAnonLocation(null);
+    setSourceLocation(null);
   }
 
   const filteredStops =
@@ -148,14 +164,32 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       s.name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
+  useEffect(()=>{
+    if(!openTicket && (stops.destStop.length==0 || stops.sourceStop.length==0)){
+      setAnonRouteGeoJSON(null);
+      setSourceLocation(null);
+      setAnonLocation(null);
+    }
+  },[openTicket, stops.destStop.length, stops.sourceStop.length])
+
   return (
     <>
+      {anonRouteGeoJSON && stops.sourceStop && stops.destStop && (
+        <button onClick={()=>{
+          setAnonRouteGeoJSON(null);
+          setOpenTicket(true);
+          setAnonLocation(null);
+          setSourceLocation(null);
+        }} className="fixed right-0 top-1/2 -translate-y-1/2 bg-white rounded-l-lg p-2">
+          <X className="w-7 h-7 "/>
+        </button>
+      )}
       {isStopActive && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-501" />
       )}
 
       <div
-        className={`fixed top-0 w-full h-2/3 px-2 py-3 bg-white transition-all duration-200 hidden max-[500px]:flex flex-col gap-3 z-502 ${
+        className={`fixed top-0 w-full h-3/4 px-2 py-3 bg-white transition-all duration-200 hidden max-[500px]:flex flex-col gap-3 z-502 ${
           isStopActive ? "translate-y-0" : "-translate-y-200"
         }`}
       >
@@ -249,7 +283,12 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
         <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
             {(stops.destStop.length>0 && stops.sourceStop.length>0) ?
-            <>
+              (stops.destStop == stops.sourceStop ?
+                <span className="text-lg font-bold text-center text-red-500">
+                  You have selected Same stops, Select different source and destination stops
+                </span>
+              :
+              <>
                 <span className="text-lg font-bold text-center">Selected Route</span>
                 <div className="flex flex-col">
                     <div className="rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4">
@@ -298,7 +337,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                     <button onClick={CancelTicket} className="h-12">Cancel</button>
                     <button className="h-12 bg-gray-200 text-green-500">Pay ₹{totalPrice}</button>
                 </div>
-            </>
+              </>)
             :
             <span className="text-lg font-bold text-center">
                 Select both source and destination stops to view the route information.

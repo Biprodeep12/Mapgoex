@@ -17,7 +17,8 @@ export default function MainMap() {
     selectedBusRouteInfo,
     activeLiveBus,
     anonRouteGeoJSON,
-    anonLocation
+    anonLocation,
+    sourceLocation
   } = useMapContext();
   const { busPos, busStopsETA, setTrackingBusStop } = useBusSimulator();
   const [busStopInfo, setBusStopInfo] = useState<[number, number][]>([]);
@@ -92,6 +93,12 @@ export default function MainMap() {
 
       {userLocation && (
         <Marker longitude={userLocation[0]} latitude={userLocation[1]} anchor="bottom">
+          <div className="w-4.5 h-4.5 border-4 border-blue-500 bg-white rounded-full"></div>
+        </Marker>
+      )}
+
+      {sourceLocation && (
+        <Marker longitude={sourceLocation[0]} latitude={sourceLocation[1]} anchor="bottom">
           <div className="w-4.5 h-4.5 border-4 border-blue-500 bg-white rounded-full"></div>
         </Marker>
       )}

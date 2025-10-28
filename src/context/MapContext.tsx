@@ -6,6 +6,9 @@ import { BusData, BusRoute } from "@/types/bus";
 interface MapContextType {
   userLocation: [number, number] | null;
   setUserLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
+
+  sourceLocation: [number, number] | null;
+  setSourceLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
   
   anonLocation: [number, number] | null;
   setAnonLocation: React.Dispatch<React.SetStateAction<[number, number] | null>>;
@@ -56,6 +59,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   });
   
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [sourceLocation, setSourceLocation] = useState<[number, number] | null>(null);
   const [anonLocation, setAnonLocation] = useState<[number, number] | null>(null);
   
   const [routeGeoJSON, setRouteGeoJSON] = useState<ORSGeoJSON | null>(null);
@@ -112,6 +116,8 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo(() => ({
     userLocation,
     setUserLocation,
+    sourceLocation,
+    setSourceLocation,
     anonLocation,
     setAnonLocation,
     anonRouteGeoJSON,
@@ -132,6 +138,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     clearBusSelection,
   }), [
     userLocation,
+    sourceLocation,
     anonLocation,
     anonRouteGeoJSON,
     routeGeoJSON,

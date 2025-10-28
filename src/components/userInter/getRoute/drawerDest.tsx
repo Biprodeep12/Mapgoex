@@ -49,7 +49,7 @@ export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    if(!anonRouteGeoJSON) return;
+    if(!anonRouteGeoJSON || !(destinationData.finishActive||destinationData.startActive)) return;
 
     return(
         <>

@@ -1,5 +1,5 @@
 import { useMapContext } from "@/context/MapContext";
-import { X, Bus, LoaderCircle, EllipsisVertical, BusFront, IndianRupee } from "lucide-react";
+import { X, Bus, LoaderCircle, EllipsisVertical, BusFront, TicketPlus } from "lucide-react";
 import { memo, useEffect, useRef, useState } from "react";
 import { BusStops } from "./busStops";
 import BottomDrawer from "@/components/drawer";
@@ -7,6 +7,7 @@ import WeatherIcon from "@/utils/weather";
 import { useBusSimulator } from "@/context/BusSimulatorContext";
 import { Feedback } from "./feedback";
 import { TicketSideBar } from "./TicketSideBar";
+import { destinationType } from "..";
 
 interface WeatherData {
   name: string;
@@ -17,11 +18,12 @@ interface WeatherData {
 
 interface Props {
   setAuthOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  destinationData: destinationType;
 }
 
 const API_KEY = "f0a3263ad56623877e07814bc905e67c";
 
-export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
+export const BusRouteInfo = memo(({setAuthOpen,destinationData}:Props) => {
   const { 
     selectedBus, 
     routeGeoJSON, 
@@ -101,7 +103,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
 
   if (!routeGeoJSON || !selectedBusRouteInfo) return null;
 
-  if (anonRouteGeoJSON) return null;
+  if (anonRouteGeoJSON && (destinationData?.finishActive || destinationData?.startActive)) return null;
 
   return (
     <>
@@ -191,7 +193,7 @@ export const BusRouteInfo = memo(({setAuthOpen}:Props) => {
                 className="p-2 hover:bg-green-200 rounded-full transition-colors group bg-green-100"
                 aria-label="Open ticket sidebar"
               >
-                <IndianRupee className="w-5 h-5 text-green-500 group-hover:text-green-700" />
+                <TicketPlus className="w-5 h-5 text-green-500 group-hover:text-green-700" />
               </button>
               <button 
                 onClick={ClearAllCauses}

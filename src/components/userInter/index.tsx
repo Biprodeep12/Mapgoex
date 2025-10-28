@@ -636,7 +636,7 @@ const UserInter = () => {
           </div>
         </div>
       }
-      <BusRouteInfo setAuthOpen={setAuthOpen}/>
+      <BusRouteInfo setAuthOpen={setAuthOpen} destinationData={destinationData}/>
       {/* {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>} */}
 
     </>
