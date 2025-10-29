@@ -16,6 +16,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Missing uuid or ticket" });
     }
 
+    if (
+      !ticket.route ||
+      !ticket.count ||
+      !ticket.source ||
+      !ticket.destination ||
+      !ticket.payment ||
+      !ticket.time
+    ) {
+      return res.status(400).json({ error: "Incomplete ticket data" });
+    }
+
     const existinguuid = await ticketInfo.findOne({ uuid });
 
     if (existinguuid) {
@@ -25,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await ticketInfo.create({ uuid, tickets: [ticket] });
     }
 
-    return res.status(201).json({ message: "ticket added successfully" });
+    return res.status(201).json({ message: "Ticket added successfully" });
   } catch (err) {
     console.error("Error adding ticket:", err);
     return res.status(500).json({ error: "Error adding ticket" });

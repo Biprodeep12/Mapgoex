@@ -1,10 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface ITicketItem {
+  route: string;
   count: number;
   source: string;
   destination: string;
   payment: number;
+  time: Date;
 }
 
 export interface ITicket extends Document {
@@ -14,6 +16,11 @@ export interface ITicket extends Document {
 
 const TicketItemSchema = new Schema<ITicketItem>(
   {
+    route: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     count: {
       type: Number,
       required: true,
@@ -33,6 +40,10 @@ const TicketItemSchema = new Schema<ITicketItem>(
       type: Number,
       required: true,
       min: 0,
+    },
+    time: {
+      type: Date,
+      required: true,
     },
   },
   { _id: false }
