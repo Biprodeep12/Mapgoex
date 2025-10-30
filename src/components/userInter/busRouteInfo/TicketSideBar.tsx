@@ -191,7 +191,10 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     ) || [];
 
   const CheckOut = async() => {
-    if(!user) return;
+    if(!user){
+      window.alert("Login to Book a Ticket")
+      return;
+    }
     const uuid = user.uid;
 
     const Ticket = {
@@ -454,7 +457,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                     :
                     'See Route On Map'}
                 </button>
-                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket is valid for 24 hours</div>
+                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket will be valid for 24 hours</div>
                 <div className="fixed bottom-0 left-0 right-0 grid grid-cols-2 border-t border-gray-300 text-lg font-bold">
                     <button onClick={CancelTicket} className="h-12">Cancel</button>
                     <button onClick={CheckOut} className="h-12 bg-blue-400 text-white">
@@ -595,7 +598,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                     :
                     'See Route On Map'}
                 </button>
-                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket is valid for 24 hours</div>
+                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket will be valid for 24 hours</div>
                 <div className="fixed rounded-lg gap-2 bottom-5 left-1/2 -translate-x-1/2 max-w-[640px] w-full bg-white p-2 grid grid-cols-2 text-lg font-bold">
                     <button onClick={CancelTicket} className="h-12 hover:bg-gray-100 rounded-lg cursor-pointer">Cancel</button>
                     <button onClick={CheckOut} className="h-12 bg-blue-400 hover:bg-blue-500 rounded-lg cursor-pointer text-white">
