@@ -17,6 +17,27 @@ interface TicketSideBarState {
   destActive: boolean;
 }
 
+function convertUTCtoIST(utcString: string): string {
+  const utcDate = new Date(utcString);
+
+  const istDate = new Date(utcDate.getTime());
+
+  const hours = istDate.getHours().toString().padStart(2, "0");
+  const minutes = istDate.getMinutes().toString().padStart(2, "0");
+  const day = istDate.getDate().toString().padStart(2, "0");
+  const month = (istDate.getMonth() + 1).toString().padStart(2, "0");
+  const year = istDate.getFullYear();
+  return `${hours}:${minutes} ${day}/${month}/${year}`;
+}
+
+function has24HoursPassed(timestamp: string): boolean {
+  const pastDate = new Date(timestamp);
+  const now = new Date();
+  const diffInMs = now.getTime() - pastDate.getTime();
+  const hoursPassed = diffInMs / (1000 * 60 * 60);
+  return hoursPassed >= 24;
+}
+
 export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     const { 
       selectedBusRouteInfo, 
@@ -130,21 +151,19 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     ? stops.destStop
     : "";
 
-    const handleSelectStop = (stopName: string,coords:[number,number]) => {
-        if(stops.sourceActive && stops.destStop === stopName) return;
-        setStops((prev) => ({
-        ...prev,
-        sourceStop: prev.sourceActive ? stopName : prev.sourceStop,
-        destStop: prev.destActive ? stopName : prev.destStop,
-        sourceActive: false,
-        destActive: false,
-        }));
-        if(stops.sourceActive) {
-            setSourceLocation(coords);
-        } else if(stops.destActive) {
-            setAnonLocation(coords);
-        }
-    }
+  const handleSelectStop = useCallback((stopName: string, coords: [number, number]) => {
+    if (stops.sourceActive && stops.destStop === stopName) return;
+    setStops(prev => ({
+      ...prev,
+      sourceStop: prev.sourceActive ? stopName : prev.sourceStop,
+      destStop: prev.destActive ? stopName : prev.destStop,
+      sourceActive: false,
+      destActive: false,
+    }));
+
+    if (stops.sourceActive) setSourceLocation(coords);
+    else if (stops.destActive) setAnonLocation(coords);
+  }, [stops, setSourceLocation, setAnonLocation]);
 
   const clearActiveStop = () =>
     setStops((prev) => ({
@@ -207,25 +226,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       try {
         const res = await fetch(`/api/book/${user?.uid}`);
         const data = await res.json();
-        setBooks(data)
+        setBooks(data.reverse())
       } catch {
         setBooks([])
       }
     }
-  }
-
-  function convertUTCtoIST(utcString: string): string {
-    const utcDate = new Date(utcString);
-
-    const istDate = new Date(utcDate.getTime());
-
-    const hours = istDate.getHours().toString().padStart(2, "0");
-    const minutes = istDate.getMinutes().toString().padStart(2, "0");
-    const day = istDate.getDate().toString().padStart(2, "0");
-    const month = (istDate.getMonth() + 1).toString().padStart(2, "0");
-    const year = istDate.getFullYear();
-
-    return `${hours}:${minutes} ${day}/${month}/${year}`;
   }
 
   useEffect(()=>{
@@ -252,18 +257,20 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-501" />
       )}
 
-      <div className={`fixed z-502 p-3 flex flex-col bottom-0 left-0 right-0 h-1/2 ${ticketHistory?'translate-y-0':'translate-y-200'} transition-all duration-200 rounded-t-3xl bg-white`}>
+      <div className={`fixed z-502 p-3 left-1/2 -translate-x-1/2 flex flex-col bottom-0 w-full max-w-[640px] h-1/2 ${ticketHistory?'translate-y-0':'translate-y-200'} transition-all duration-200 rounded-t-3xl bg-white`}>
         <button
           onClick={()=>setTicketHistory(false)}
-          className="absolute p-3 rounded-full bg-white -top-17 left-1/2 -translate-x-1/2"
+          className="absolute p-3 rounded-full bg-white cursor-pointer hover:bg-gray-100 -top-17 left-1/2 -translate-x-1/2"
         >
           <X className="w-7 h-7" />
         </button>
         <div className="text-2xl font-bold mx-auto mb-5">Ticket History</div>
         <div className="flex-1 overflow-y-auto space-y-2">
           {books.length>0 ? 
-            (books?.map((tick,indx)=>(
-              <div key={indx} className="rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4">
+            (books?.map((tick,indx)=>{
+              const isExpired = has24HoursPassed(tick.time.toString());
+              return(
+              <div key={indx} className={`rounded-lg border-2 border-blue-500 ${isExpired && 'opacity-50'} flex flex-col gap-4 p-4`}>
                   <div className="flex flex-row justify-between">
                       <div className="flex flex-row items-center gap-1">
                         <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
@@ -284,12 +291,15 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                       <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
                       <span>{tick.destination}</span>
                   </div>
-                  <div className="flex flex-row items-center gap-1">
-                    <span className="font-bold">Booked on:</span>
-                    {convertUTCtoIST(tick.time.toString())}
+                  <div className="flex flex-row items-center justify-between">
+                    <div className="flex flex-row items-center gap-1">
+                      <span className="font-bold">Booked on:</span>
+                      {convertUTCtoIST(tick.time.toString())}
+                    </div>
+                    {isExpired && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
                   </div>
               </div>
-            )))
+            )}))
           :<div className="flex items-center justify-center h-full text-xl ">No Tickets to be Seen</div>}
         </div>
       </div>
@@ -300,7 +310,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       </div>
 
       <div
-        className={`fixed top-0 w-full h-3/4 px-2 py-3 bg-white transition-all duration-200 hidden max-[500px]:flex flex-col gap-3 z-502 ${
+        className={`fixed top-0 w-full rounded-b-2xl max-w-[700px] left-1/2 -translate-x-1/2 h-3/4 px-2 py-3 bg-white transition-all duration-200 flex flex-col gap-3 z-502 ${
           isStopActive ? "translate-y-0" : "-translate-y-200"
         }`}
       >
@@ -326,7 +336,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="truncate text-xl">{activeStopName}</span>
             </div>
             <button
-              className="rounded-full p-1 bg-white"
+              className="rounded-full p-1 bg-white cursor-pointer hover:bg-gray-100"
               onClick={clearActiveStop}
             >
               <X className="w-5 h-5 text-gray-600" />
@@ -339,7 +349,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
             <button
               key={idx}
               onClick={() => handleSelectStop(stop.name,stop.coords)}
-              className="flex flex-row h-11.5 w-full rounded-lg border border-gray-300 gap-3 py-2 px-3 items-center"
+              className="flex flex-row h-11.5 w-full rounded-lg hover:bg-gray-100 cursor-pointer border border-gray-300 gap-3 py-2 px-3 items-center"
             >
               <BusFront className="w-5 h-5 text-blue-500" />
               <span className="truncate text-xl">{stop.name}</span>
@@ -349,14 +359,14 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
         <button
           onClick={closeStops}
-          className="absolute p-2 rounded-full bg-white -bottom-15 left-1/2 -translate-x-1/2"
+          className="absolute cursor-pointer hover:bg-gray-100 p-2 rounded-full bg-white -bottom-15 left-1/2 -translate-x-1/2"
         >
           <X className="w-7 h-7" />
         </button>
       </div>
 
       <div
-        className={`fixed inset-0 bg-white p-4 flex-col gap-4 hidden max-[500px]:flex z-500 transition-all duration-300 ${
+        className={`fixed inset-0 bg-white p-4 flex-col hidden max-[500px]:flex gap-4 z-500 transition-all duration-300 ${
           openTicket ? "translate-x-0" : "translate-x-200"
         }`}
       >
@@ -392,7 +402,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
         <div className="w-full bg-gray-300 h-[1px]"/>
 
-        <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+        <div className="flex-1 flex flex-col gap-3 overflow-y-auto pb-10">
             {(stops.destStop.length>0 && stops.sourceStop.length>0) ?
               (stops.destStop == stops.sourceStop ?
                 <span className="text-lg font-bold text-center text-red-500">
@@ -444,6 +454,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                     :
                     'See Route On Map'}
                 </button>
+                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket is valid for 24 hours</div>
                 <div className="fixed bottom-0 left-0 right-0 grid grid-cols-2 border-t border-gray-300 text-lg font-bold">
                     <button onClick={CancelTicket} className="h-12">Cancel</button>
                     <button onClick={CheckOut} className="h-12 bg-blue-400 text-white">
@@ -456,7 +467,40 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="text-lg font-bold text-center">
                   Select both source and destination stops to view the route information.
               </span>
-              <button onClick={TicketHistoryCheck} className="fixed bottom-0 left-0 right-0 h-12 border-t border-gray-300 text-lg font-bold">
+              {books.length>0 &&
+                (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
+                  return(
+                  <div key={indx} className={`rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4`}>
+                      <div className="flex flex-row justify-between">
+                          <div className="flex flex-row items-center gap-1">
+                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                                {tick.route}
+                            </div>
+                            x
+                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                              {tick.count} Ticket{tick.count>1?'s':''}
+                            </div>
+                          </div>
+                          <div 
+                              className="flex items-center justify-center h-8 bg-green-400 text-white rounded-lg font-bold py-1 px-2">
+                              ₹{tick.payment}
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
+                          <span>{tick.source}</span> 
+                          <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
+                          <span>{tick.destination}</span>
+                      </div>
+                      <div className="flex flex-row items-center justify-between">
+                        <div className="flex flex-row items-center gap-1">
+                          <span className="font-bold">Booked on:</span>
+                          {convertUTCtoIST(tick.time.toString())}
+                        </div>
+                        {has24HoursPassed(tick.time.toString()) && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
+                      </div>
+                  </div>
+                )}))}
+              <button onClick={TicketHistoryCheck} className="fixed bottom-0 left-0 right-0 bg-white h-12 border-t border-gray-300 text-lg font-bold">
                 Ticket History
               </button>
             </>
@@ -464,6 +508,148 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         </div>
 
       </div>
+
+    <div className={`fixed ${openTicket? 'max-[500px]:hidden flex':'hidden'} inset-0 bg-black/20 backdrop-blur-[2px] z-499 items-center justify-center`}>
+      <div className="h-[70%] flex bg-white w-full max-w-[640px] rounded-lg p-4 flex-col gap-4 z-500">
+        <div className="flex flex-row gap-4 items-center justify-between">
+          <span className="text-2xl font-bold">Book Ticket</span>
+          <button onClick={() => setOpenTicket(false)} className="cursor-pointer rounded-full hover:bg-gray-100">
+            <X className="w-7 h-7" />
+          </button>
+        </div>
+
+        <div className="grid grid-rows-2 gap-3 text-lg">
+          {[
+            { label: "Source", stop: stops.sourceStop, onClick: openSource },
+            { label: "Destination", stop: stops.destStop, onClick: openDest },
+          ].map(({ label, stop, onClick }) => (
+            <button
+              key={label}
+              onClick={onClick}
+              className="flex flex-row gap-3 cursor-pointer text-left items-center h-13 px-4 rounded-xl text-black bg-blue-50 hover:bg-blue-100"
+            >
+              <BusFront className="w-6 h-6 text-blue-500" />
+              {stop ? (
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold">{label} Stop</span>
+                  <span className="text-lg">{stop}</span>
+                </div>
+              ) : (
+                <span className="text-lg">{label} Stop</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full bg-gray-300 h-[1px]"/>
+
+        <div className="flex-1 flex flex-col gap-3 overflow-y-auto relative">
+            {(stops.destStop.length>0 && stops.sourceStop.length>0) ?
+              (stops.destStop == stops.sourceStop ?
+                <span className="text-lg font-bold text-center text-red-500">
+                  You have selected Same stops, Select different source and destination stops
+                </span>
+              :
+              <>
+                <span className="text-lg font-bold text-center">Selected Route</span>
+                <div className="flex flex-col">
+                    <div className="rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4">
+                        <div className="flex flex-row justify-between">
+                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                                {selectedBusRouteInfo?.Route}
+                            </div>
+                            <button 
+                                onClick={CancelTicket} 
+                                className="h-8 bg-red-200 rounded-lg font-bold px-2 cursor-pointer hover:bg-red-300">
+                                Cancel
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
+                            <span>{stops.sourceStop}</span> 
+                            <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
+                            <span>{stops.destStop}</span>
+                        </div>
+                        <div className="flex flex-row items-center justify-between">
+                            <span className="text-lg">No of Tickets:</span>
+                            <div className="flex flex-row items-center">
+                                <button               
+                                    onClick={() =>
+                                        setTicketCount((prev) => Math.max(1, prev - 1))
+                                    } 
+                                    className="bg-blue-50 border border-blue-400 rounded-full w-8 text-xl">-</button>
+                                <span className="mx-4 text-lg">{ticketCount}</span>
+                                <button
+                                    onClick={() => setTicketCount((prev) => prev + 1)}
+                                    className="bg-blue-50 border border-blue-400 rounded-full w-8 text-xl">+</button>
+                            </div>
+                        </div>
+                        <div className="flex flex-row items-center justify-center gap-2 text-lg font-bold">
+                            <span>Total Price:</span>
+                            <span className="text-green-500">₹{totalPrice}</span>
+                        </div>
+                    </div>
+                </div>
+                <button onClick={fetchRoute} className="h-10 bg-blue-400 cursor-pointer hover:bg-blue-500 shrink-0 text-lg rounded-lg font-bold text-white">
+                    {loadingRouteMap ?
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto"/> 
+                    :
+                    'See Route On Map'}
+                </button>
+                <div className="mx-auto text-lg font-bold my-2 text-red-400">This Ticket is valid for 24 hours</div>
+                <div className="fixed rounded-lg gap-2 bottom-5 left-1/2 -translate-x-1/2 max-w-[640px] w-full bg-white p-2 grid grid-cols-2 text-lg font-bold">
+                    <button onClick={CancelTicket} className="h-12 hover:bg-gray-100 rounded-lg cursor-pointer">Cancel</button>
+                    <button onClick={CheckOut} className="h-12 bg-blue-400 hover:bg-blue-500 rounded-lg cursor-pointer text-white">
+                      {payLoading ?<Loader2 className="w-5 h-5 animate-spin mx-auto"/>:`Pay ₹${totalPrice}`}
+                    </button>
+                </div>
+              </>)
+            :
+            <>
+              <span className="text-lg font-bold text-center">
+                  Select both source and destination stops to view the route information.
+              </span>
+              {books.length>0 &&
+                (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
+                  const isExpired = has24HoursPassed(tick.time.toString());
+                  return(
+                  <div key={indx} className={`rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4`}>
+                      <div className="flex flex-row justify-between">
+                          <div className="flex flex-row items-center gap-1">
+                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                                {tick.route}
+                            </div>
+                            x
+                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                              {tick.count} Ticket{tick.count>1?'s':''}
+                            </div>
+                          </div>
+                          <div 
+                              className="flex items-center justify-center h-8 bg-green-400 text-white rounded-lg font-bold py-1 px-2">
+                              ₹{tick.payment}
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
+                          <span>{tick.source}</span> 
+                          <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
+                          <span>{tick.destination}</span>
+                      </div>
+                      <div className="flex flex-row items-center justify-between">
+                        <div className="flex flex-row items-center gap-1">
+                          <span className="font-bold">Booked on:</span>
+                          {convertUTCtoIST(tick.time.toString())}
+                        </div>
+                        {isExpired && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
+                      </div>
+                  </div>
+                )}))}
+              <button onClick={TicketHistoryCheck} className="mt-auto fixed max-w-[640px] w-full bg-white bottom-5 left-1/2 -translate-x-1/2 cursor-pointer h-12 border border-gray-300 hover:bg-gray-100 rounded-lg text-lg font-bold">
+                Ticket History
+              </button>
+            </>
+            }
+        </div>
+      </div>
+    </div>
     </>
   );
 };

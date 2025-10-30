@@ -124,10 +124,12 @@ export const BusRouteInfo = memo(({setAuthOpen,destinationData}:Props) => {
             <BusFront className="text-blue-500 h-7 w-7"/>
             <div className="text-2xl font-bold text-gray-900">{selectedBus.id}</div>
           </div>
-          <button 
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors group cursor-pointer outline-none"
+          <button
+            onClick={() => setOpenTicket(true)}
+            className="p-2 cursor-pointer font-bold flex flex-row gap-2 items-center hover:bg-green-200 text-green-500 hover:text-green-700 rounded-lg transition-colors group bg-green-100"
+            aria-label="Open ticket sidebar"
           >
-            <EllipsisVertical className="w-5 h-5 text-gray-500 group-hover:text-gray-700" />
+            <TicketPlus className="w-5 h-5 rotate-45" /> Ticket
           </button>
         </div>
         
