@@ -215,7 +215,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     try {
       setPayLoading(true);
 
-      const res = await fetch("/api/book/", {
+      const res = await fetch("/api/book/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uuid, ticket: Ticket }),
