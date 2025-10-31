@@ -2,7 +2,7 @@ import { useMapContext } from "@/context/MapContext";
 import { useAuth } from "@/context/userContext";
 import { ITicketItem } from "@/models/ticketInfo";
 import axios from "axios";
-import { ArrowLeft, ArrowRight, BusFront, CircleCheckBig, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BusFront, CircleCheckBig, CircleX, Loader2, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
@@ -53,10 +53,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [ticketCount, setTicketCount] = useState(1);
     const [loadingRouteMap, setLoadingRouteMap] = useState(false);
-    const [checkout, setCheckout] = useState(false);
+    const [checkout, setCheckout] = useState({active: false,error:false});
     const [payLoading, setPayLoading] = useState(false);
     const [books, setBooks] = useState<ITicketItem[]>([]);
     const [ticketHistory, setTicketHistory] = useState(false);
+    const [impMessages, setImpMessages] = useState("");
     const ContentRef = useRef<{ sourceLocation: [number, number]; anonLocation: [number, number]}>(null)
 
     const [stops, setStops] = useState<TicketSideBarState>({
@@ -173,6 +174,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     }));
 
   const CancelTicket = () => {
+    setImpMessages("")
     setStops(prev=>({
         ...prev,
         destStop: '',
@@ -190,40 +192,53 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       s.name.toLowerCase().includes(searchQuery.toLowerCase())
     ) || [];
 
-  const CheckOut = async() => {
-    if(!user){
-      window.alert("Login to Book a Ticket")
+  const CheckOut = async () => {
+    setImpMessages("")
+    if (!user) {
+      setImpMessages("Please log in to book a ticket.");
       return;
     }
-    const uuid = user.uid;
 
+    const uuid = user.uid;
     const Ticket = {
       route: selectedBusRouteInfo?.Route,
       count: ticketCount,
       source: stops.sourceStop,
       destination: stops.destStop,
       payment: totalPrice,
-      time: new Date()
+      time: new Date(),
+    };
+
+    try {
+      setPayLoading(true);
+
+      const res = await fetch("/api/book/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uuid, ticket: Ticket }),
+      });
+      if(res.ok){
+        setCheckout({active:true ,error:false})
+      } else {
+        setCheckout({active:true, error: true});
+      }
+    } catch (err) {
+      setImpMessages(`Something Went Wrong: (${err})`)
+    } finally {
+      setPayLoading(false);
+      setTimeout(() => {
+        setCheckout({active:false, error:false});
+        CancelTicket();
+      }, 2000);
     }
-
-    setPayLoading(true);
-    await fetch("/api/book/add", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uuid, ticket: Ticket  }),
-    });
-    setPayLoading(false);
-
-    setCheckout(true);
-    setTimeout(()=>{
-      setCheckout(false);
-      CancelTicket();
-    },2000)
-  }
+  };
 
   const TicketHistoryCheck = async() =>{
-    setTicketHistory(true);
-    if(!user?.uid) return;
+    setImpMessages("")
+    if(!user?.uid){
+      setImpMessages("Please log in to book a ticket.");
+      return;
+    }
     
     if(books.length == 0){
       try {
@@ -307,9 +322,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         </div>
       </div>
 
-      <div className={`fixed inset-0 bg-white z-502 flex items-center justify-center transition-all duration-200 ${checkout?'translate-y-0':'-translate-y-300'}`}>
-        <CircleCheckBig fill="lightgreen" className={`text-green-400 w-10 h-10 ${checkout?'paySpin':''}`}/>
-        <span className="text-nowrap translate-y-10 absolute top-1/2 left-1/2 -translate-1/2 text-green-500 font-bold text-3xl">Payed ₹{totalPrice}</span>
+      <div className={`fixed inset-0 bg-white z-502 flex items-center justify-center transition-all duration-200 ${checkout.active?'translate-y-0':'-translate-y-300'}`}>
+        <div className={checkout.active ? "paySpin":''}>
+          {checkout.error ? <CircleX fill="lightred" className='text-red-400 w-10 h-10'/>:<CircleCheckBig fill="lightgreen" className='text-green-400 w-10 h-10'/>}
+        </div>
+        <span className={`text-nowrap translate-y-10 absolute top-1/2 left-1/2 -translate-1/2 ${checkout.error?'text-red-500':'text-green-500'} font-bold text-3xl`}>{checkout.error?'Something went Wrong':`Payed ₹${totalPrice}`}</span>
       </div>
 
       <div
@@ -406,6 +423,8 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         <div className="w-full bg-gray-300 h-[1px]"/>
 
         <div className="flex-1 flex flex-col gap-3 overflow-y-auto pb-10">
+          {impMessages && <span className="text-lg font-bold text-center text-red-500">{impMessages}</span>}
+          {checkout.error && <span className="text-lg font-bold text-center text-red-500">Something went Wrong</span>}
             {(stops.destStop.length>0 && stops.sourceStop.length>0) ?
               (stops.destStop == stops.sourceStop ?
                 <span className="text-lg font-bold text-center text-red-500">
@@ -470,6 +489,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="text-lg font-bold text-center">
                   Select both source and destination stops to view the route information.
               </span>
+              {user&& books.length == 0 && <button onClick={TicketHistoryCheck} className="rounded-lg border-2 border-gray-300 text-xl py-2 bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">Get your Live Tickets</button>}
               {books.length>0 &&
                 (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
                   return(
@@ -503,7 +523,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                       </div>
                   </div>
                 )}))}
-              <button onClick={TicketHistoryCheck} className="fixed bottom-0 left-0 right-0 bg-white h-12 border-t border-gray-300 text-lg font-bold">
+              <button onClick={()=>{setTicketHistory(true);TicketHistoryCheck()}} className="fixed bottom-0 left-0 right-0 bg-white h-12 border-t border-gray-300 text-lg font-bold">
                 Ticket History
               </button>
             </>
@@ -547,6 +567,8 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
         <div className="w-full bg-gray-300 h-[1px]"/>
 
         <div className="flex-1 flex flex-col gap-3 overflow-y-auto relative">
+          {impMessages && <span className="text-lg font-bold text-center text-red-500">{impMessages}</span>}
+          {checkout.error && <span className="text-lg font-bold text-center text-red-500">Something went Wrong</span>}
             {(stops.destStop.length>0 && stops.sourceStop.length>0) ?
               (stops.destStop == stops.sourceStop ?
                 <span className="text-lg font-bold text-center text-red-500">
@@ -611,6 +633,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="text-lg font-bold text-center">
                   Select both source and destination stops to view the route information.
               </span>
+              {user&& books.length == 0 && <button onClick={TicketHistoryCheck} className="rounded-lg border-2 border-gray-300 text-xl py-2 bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">Get your Live Tickets</button>}
               {books.length>0 &&
                 (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
                   const isExpired = has24HoursPassed(tick.time.toString());
@@ -645,7 +668,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                       </div>
                   </div>
                 )}))}
-              <button onClick={TicketHistoryCheck} className="mt-auto fixed max-w-[640px] w-full bg-white bottom-5 left-1/2 -translate-x-1/2 cursor-pointer h-12 border border-gray-300 hover:bg-gray-100 rounded-lg text-lg font-bold">
+              <button onClick={()=>{setTicketHistory(true);TicketHistoryCheck()}} className="mt-auto fixed max-w-[640px] w-full bg-white bottom-5 left-1/2 -translate-x-1/2 cursor-pointer h-12 border border-gray-300 hover:bg-gray-100 rounded-lg text-lg font-bold">
                 Ticket History
               </button>
             </>
