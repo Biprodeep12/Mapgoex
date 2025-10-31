@@ -18,24 +18,19 @@ interface TicketSideBarState {
 }
 
 function convertUTCtoIST(utcString: string): string {
-  const utcDate = new Date(utcString);
-
-  const istDate = new Date(utcDate.getTime());
-
-  const hours = istDate.getHours().toString().padStart(2, "0");
-  const minutes = istDate.getMinutes().toString().padStart(2, "0");
-  const day = istDate.getDate().toString().padStart(2, "0");
-  const month = (istDate.getMonth() + 1).toString().padStart(2, "0");
-  const year = istDate.getFullYear();
+  const d = new Date(utcString);
+  const hours = d.getHours().toString().padStart(2, "0");
+  const minutes = d.getMinutes().toString().padStart(2, "0");
+  const day = d.getDate().toString().padStart(2, "0");
+  const month = (d.getMonth() + 1).toString().padStart(2, "0");
+  const year = d.getFullYear();
   return `${hours}:${minutes} ${day}/${month}/${year}`;
 }
 
-function has24HoursPassed(timestamp: string): boolean {
-  const pastDate = new Date(timestamp);
-  const now = new Date();
-  const diffInMs = now.getTime() - pastDate.getTime();
-  const hoursPassed = diffInMs / (1000 * 60 * 60);
-  return hoursPassed >= 24;
+function has24HoursPassed(timestamp: string | number): boolean {
+  const past = typeof timestamp === "number" ? timestamp : Date.parse(String(timestamp));
+  if (Number.isNaN(past)) return false;
+  return Date.now() - past >= 24 * 60 * 60 * 1000;
 }
 
 export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
@@ -58,7 +53,9 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     const [books, setBooks] = useState<ITicketItem[]>([]);
     const [ticketHistory, setTicketHistory] = useState(false);
     const [impMessages, setImpMessages] = useState("");
-    const ContentRef = useRef<{ sourceLocation: [number, number]; anonLocation: [number, number]}>(null)
+    const [liveTickets, setLiveTickets] = useState(false)
+
+    const ContentRef = useRef<string | null>(null)
 
     const [stops, setStops] = useState<TicketSideBarState>({
         sourceStop: "",
@@ -70,12 +67,13 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     const fetchRoute = useCallback(
         async () => {
             if (!sourceLocation || !anonLocation) return;
-            if(JSON.stringify(ContentRef.current) === JSON.stringify({sourceLocation,anonLocation})){
+            const key = `${sourceLocation[0]},${sourceLocation[1]}|${anonLocation[0]},${anonLocation[1]}`;
+            if (ContentRef.current === key) {
               setOpenTicket(false)
               return;
-            };
+            }
 
-            ContentRef.current = {sourceLocation,anonLocation};
+            ContentRef.current = key;
 
             setLoadingRouteMap(true);
 
@@ -135,22 +133,20 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
 
   const isStopActive = stops.sourceActive || stops.destActive;
 
-  const setActive = (type: "source" | "dest", value: boolean) =>
+  const setActive = useCallback((type: "source" | "dest", value: boolean) =>
     setStops((prev) => ({
       ...prev,
       sourceActive: type === "source" ? value : false,
       destActive: type === "dest" ? value : false,
-    }));
+    })), []);
 
   const closeStops = () => setActive("source", false);
   const openSource = () => setActive("source", true);
   const openDest = () => setActive("dest", true);
 
-  const activeStopName = stops.sourceActive
-    ? stops.sourceStop
-    : stops.destActive
-    ? stops.destStop
-    : "";
+  const activeStopName = useMemo(() => (
+    stops.sourceActive ? stops.sourceStop : stops.destActive ? stops.destStop : ""
+  ), [stops.sourceActive, stops.destActive, stops.sourceStop, stops.destStop]);
 
   const handleSelectStop = useCallback((stopName: string, coords: [number, number]) => {
     setImpMessages("")
@@ -167,33 +163,29 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     else if (stops.destActive) setAnonLocation(coords);
   }, [stops, setSourceLocation, setAnonLocation]);
 
-  const clearActiveStop = () =>{
+  const clearActiveStop = useCallback(() => {
     setImpMessages("")
     setStops((prev) => ({
       ...prev,
       sourceStop: prev.sourceActive ? "" : prev.sourceStop,
       destStop: prev.destActive ? "" : prev.destStop,
     }));
-  }
+  }, []);
 
-  const CancelTicket = () => {
-    setImpMessages("")
-    setStops(prev=>({
-        ...prev,
-        destStop: '',
-        sourceStop: ''
-    }))
+  const CancelTicket = useCallback(() => {
+    setImpMessages("");
+    setStops((prev) => ({ ...prev, destStop: "", sourceStop: "" }));
     setTicketCount(1);
     setAnonRouteGeoJSON(null);
     setOpenTicket(true);
     setAnonLocation(null);
     setSourceLocation(null);
-  }
+  }, [setAnonRouteGeoJSON, setAnonLocation, setOpenTicket, setSourceLocation]);
 
-  const filteredStops =
-    selectedBusRouteInfo?.busStops?.filter((s) =>
+  const filteredStops = useMemo(() => 
+    (selectedBusRouteInfo?.busStops || []).filter((s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
+    ), [selectedBusRouteInfo?.busStops, searchQuery]);
 
   const CheckOut = async () => {
     setImpMessages("")
@@ -244,12 +236,15 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     }
     
     if(books.length == 0){
+      setLiveTickets(true);
       try {
         const res = await fetch(`/api/book/${user?.uid}`);
         const data = await res.json();
         setBooks(data.reverse())
       } catch {
         setBooks([])
+      } finally {
+        setLiveTickets(false)
       }
     }
   }
@@ -492,7 +487,13 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="text-lg font-bold text-center">
                   Select both source and destination stops to view the route information.
               </span>
-              {user&& books.length == 0 && <button onClick={TicketHistoryCheck} className="rounded-lg border-2 border-gray-300 text-xl py-2 bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">Get your Live Tickets</button>}
+              {user && books.length == 0 && 
+              <button onClick={TicketHistoryCheck} className="rounded-lg border-2 h-12 border-gray-300 text-xl flex items-center justify-center bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">
+               {!liveTickets?
+                ' Get your Live Tickets'
+                :
+                <Loader2 className="text-black h-5 w-5 animate-spin"/>}
+              </button>}
               {books.length>0 &&
                 (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
                   return(
@@ -636,7 +637,13 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               <span className="text-lg font-bold text-center">
                   Select both source and destination stops to view the route information.
               </span>
-              {user&& books.length == 0 && <button onClick={TicketHistoryCheck} className="rounded-lg border-2 border-gray-300 text-xl py-2 bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">Get your Live Tickets</button>}
+              {user && books.length == 0 && 
+              <button onClick={TicketHistoryCheck} className="rounded-lg border-2 h-12 border-gray-300 text-xl flex items-center justify-center bg-gray-50 font-bold hover:bg-gray-100 cursor-pointer">
+               {!liveTickets?
+                ' Get your Live Tickets'
+                :
+                <Loader2 className="text-black h-5 w-5 animate-spin"/>}
+              </button>}
               {books.length>0 &&
                 (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
                   const isExpired = has24HoursPassed(tick.time.toString());

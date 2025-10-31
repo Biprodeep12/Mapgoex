@@ -9,7 +9,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { useAuth } from '@/context/userContext';
-import { Languages, LogIn, LogOut } from 'lucide-react';
+import { Languages, LogIn, LogOut, TicketCheck } from 'lucide-react';
 
 interface props {
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>
@@ -23,49 +23,96 @@ interface propsAuth {
 
 export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
   const { user } = useAuth();
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const mobileRef = useRef<HTMLDivElement>(null)
+  const desktopRef = useRef<HTMLDivElement>(null)
 
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				dropdownRef.current &&
-				!dropdownRef.current.contains(event.target as Node)
-			) {
-				setOpenDropUser(false);
-			}
-		};
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileRef.current &&
+        !mobileRef.current.contains(event.target as Node) &&
+        desktopRef.current &&
+        !desktopRef.current.contains(event.target as Node)
+      ) {
+        setOpenDropUser(false);
+      }
+    };
 
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [setOpenDropUser]);
 
   const handleLogout = async () => {
     await signOut(auth);
     window.location.reload();
   };
 
-  return(
-    <div className='absolute z-10 right-2 -bottom-[90px] bg-white flex drop-shadow-2xl flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl'>
-      <button onClick={()=>setLangTheme(true)} className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 flex flex-row gap-1 items-center'>
-        <Languages className='text-blue-600 w-5 h-5'/>
-        Language
-      </button>
-      {!user?
-        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center' onClick={()=>setAuthOpen(true)}>
-          <LogIn className='text-blue-600 w-5 h-5'/>
-          Login
-        </button> 
-        :
-        <button className='hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center' onClick={handleLogout}>
-          <LogOut className='text-red-500 w-5 h-5'/>
-          Logout
+  return (
+    <>
+      <div
+        className="fixed top-0 left-0 right-0 bg-white z-10 drop-shadow-2xl rounded-lg text-lg backdrop-blur-2xl hidden max-[500px]:flex flex-col p-4 gap-3"
+      >
+        <button
+          onClick={() => setLangTheme(true)}
+          className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-1 flex flex-row gap-2 items-center"
+        >
+          <Languages className="text-blue-600 w-5 h-5" />
+          Language
         </button>
-      }
-    </div>
-  )
-}
+        <button onClick={()=>setAuthOpen(false)} className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center">
+          <TicketCheck className="text-green-400 w-5 h-5" />
+          Ticket
+        </button>
+        {!user ? (
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center"
+          >
+            <LogIn className="text-blue-600 w-5 h-5" />
+            Login
+          </button>
+        ) : (
+          <button
+            onClick={handleLogout}
+            className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center"
+          >
+            <LogOut className="text-red-500 w-5 h-5" />
+            Logout
+          </button>
+        )}
+      </div>
+
+      <div
+        className="absolute z-10 right-2 -bottom-[90px] bg-white flex max-[500px]:hidden drop-shadow-2xl flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl"
+      >
+        <button
+          onClick={() => setLangTheme(true)}
+          className="hover:bg-gray-100 cursor-pointer rounded-lg p-1 flex flex-row gap-1 items-center"
+        >
+          <Languages className="text-blue-600 w-5 h-5" />
+          Language
+        </button>
+        {!user ? (
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center"
+          >
+            <LogIn className="text-blue-600 w-5 h-5" />
+            Login
+          </button>
+        ) : (
+          <button
+            onClick={handleLogout}
+            className="hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center"
+          >
+            <LogOut className="text-red-500 w-5 h-5" />
+            Logout
+          </button>
+        )}
+      </div>
+    </>
+  );
+};
 
 const AuthPage = ({setAuthOpen}:propsAuth) => {
   const [isRegister, setIsRegister] = useState(false);
