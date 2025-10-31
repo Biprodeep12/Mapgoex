@@ -153,6 +153,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     : "";
 
   const handleSelectStop = useCallback((stopName: string, coords: [number, number]) => {
+    setImpMessages("")
     if (stops.sourceActive && stops.destStop === stopName) return;
     setStops(prev => ({
       ...prev,
@@ -166,12 +167,14 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     else if (stops.destActive) setAnonLocation(coords);
   }, [stops, setSourceLocation, setAnonLocation]);
 
-  const clearActiveStop = () =>
+  const clearActiveStop = () =>{
+    setImpMessages("")
     setStops((prev) => ({
       ...prev,
       sourceStop: prev.sourceActive ? "" : prev.sourceStop,
       destStop: prev.destActive ? "" : prev.destStop,
     }));
+  }
 
   const CancelTicket = () => {
     setImpMessages("")
