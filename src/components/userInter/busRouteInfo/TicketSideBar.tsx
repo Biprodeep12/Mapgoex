@@ -316,7 +316,8 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                   </div>
               </div>
             )}))
-          :<div className="flex items-center justify-center h-full text-xl ">No Tickets to be Seen</div>}
+          :(liveTickets ? <div className="h-full flex items-center justify-center"><Loader2 className="text-black h-8 w-8 animate-spin"/></div>  : <div className="flex items-center justify-center h-full text-xl ">No Tickets to be Seen</div>)
+          }
         </div>
       </div>
 
