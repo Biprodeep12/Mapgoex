@@ -9,7 +9,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { useAuth } from '@/context/userContext';
-import {Languages, LogIn, LogOut, TicketCheck} from 'lucide-react';
+import {Languages, LogIn, LogOut, TicketCheck, X} from 'lucide-react';
 
 interface props {
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>
@@ -64,6 +64,10 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
       <div
         className="fixed top-0 left-0 right-0 bg-white z-10 drop-shadow-2xl rounded-lg text-lg backdrop-blur-2xl hidden max-[500px]:flex flex-col p-4 gap-3"
       >
+        <div className='flex flex-row items-center justify-between'>
+          <span className='text-xl font-bold'>Profile</span>
+          <button onClick={()=>setOpenDropUser(false)} className='p-1 rounded-full'><X className='h-6 w-6'/></button>
+        </div>
         <button
           onClick={() => setLangTheme(true)}
           className="bg-gray-50 cursor-pointer rounded-lg h-11 p-1 flex flex-row gap-2 items-center"
