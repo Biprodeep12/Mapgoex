@@ -12,6 +12,7 @@ import GetRoute from "./getRoute";
 import { DrawerDest } from "./getRoute/drawerDest";
 import { CarbonEmissionCard } from "./landing";
 import HomeDrawer from "../HomeDrawer";
+import { TicketHistory } from "./ticketHistory";
 
 interface SearchData {
   coords: [number, number],
@@ -553,20 +554,6 @@ const UserInter = () => {
       {authOpen && <AuthPage setAuthOpen={setAuthOpen}/>}
       <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
 
-      {/* <div className="group fixed right-2 bottom-70 rounded-full p-2 bg-white min-w-9 h-9 flex flex-row gap-2 items-center justify-center">
-        {isConnected ?
-          <>
-            <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse"/>
-            <div className="group-hover:block hidden">Server is Connected</div>
-          </>
-          :
-          <>
-            <div className="w-3 h-3 rounded-full bg-red-400 animate-pulse"/>
-            <div className="group-hover:block hidden">Server is disconnected</div>
-          </>
-        }
-      </div> */}
-
       <div className="fixed max-[500px]:hidden right-2 bottom-55">
           {!userLocation ?
           <button
@@ -637,8 +624,7 @@ const UserInter = () => {
         </div>
       }
       <BusRouteInfo setAuthOpen={setAuthOpen} destinationData={destinationData}/>
-      {/* {!(searchData.length > 0 || busSearchResults.length > 0) && <HomeDrawer/>} */}
-
+      <TicketHistory/>
     </>
   );
 };

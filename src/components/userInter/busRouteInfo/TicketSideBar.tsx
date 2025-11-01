@@ -1,9 +1,11 @@
 import { useMapContext } from "@/context/MapContext";
 import { useAuth } from "@/context/userContext";
 import { ITicketItem } from "@/models/ticketInfo";
+import { convertUTCtoIST, has24HoursPassed } from "@/utils/time";
 import axios from "axios";
-import { ArrowLeft, ArrowRight, BusFront, CircleCheckBig, CircleX, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, BusFront, CircleCheckBig, CircleX, Loader2, QrCode, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { QrCodeTicket } from "../qrCodeTicket";
 
 interface Props {
   openTicket: boolean;
@@ -17,20 +19,12 @@ interface TicketSideBarState {
   destActive: boolean;
 }
 
-function convertUTCtoIST(utcString: string): string {
-  const d = new Date(utcString);
-  const hours = d.getHours().toString().padStart(2, "0");
-  const minutes = d.getMinutes().toString().padStart(2, "0");
-  const day = d.getDate().toString().padStart(2, "0");
-  const month = (d.getMonth() + 1).toString().padStart(2, "0");
-  const year = d.getFullYear();
-  return `${hours}:${minutes} ${day}/${month}/${year}`;
-}
-
-function has24HoursPassed(timestamp: string | number): boolean {
-  const past = typeof timestamp === "number" ? timestamp : Date.parse(String(timestamp));
-  if (Number.isNaN(past)) return false;
-  return Date.now() - past >= 24 * 60 * 60 * 1000;
+interface qr {
+    user: string,
+    source: string,
+    route: string,
+    destination: string,
+    booked: string,
 }
 
 export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
@@ -44,16 +38,14 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       anonRouteGeoJSON, 
       setMapCenter 
     } = useMapContext();
-    const { user } = useAuth()
+    const { user , books, liveTickets, fetchTickets, ticketHistory, setTicketHistory } = useAuth()
     const [searchQuery, setSearchQuery] = useState("");
     const [ticketCount, setTicketCount] = useState(1);
     const [loadingRouteMap, setLoadingRouteMap] = useState(false);
     const [checkout, setCheckout] = useState({active: false,error:false});
     const [payLoading, setPayLoading] = useState(false);
-    const [books, setBooks] = useState<ITicketItem[]>([]);
-    const [ticketHistory, setTicketHistory] = useState(false);
     const [impMessages, setImpMessages] = useState("");
-    const [liveTickets, setLiveTickets] = useState(false)
+    const [qrText, setQrText] = useState<qr[]|null>([])
 
     const ContentRef = useRef<string | null>(null)
 
@@ -223,12 +215,13 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
       setPayLoading(false);
       setTimeout(() => {
         setCheckout({active:false, error:false});
+        fetchTickets();
         CancelTicket();
       }, 2000);
     }
   };
 
-  const TicketHistoryCheck = async() =>{
+  const TicketHistoryCheck = () =>{
     setImpMessages("")
     if(!user?.uid){
       setImpMessages("Please log in to book a ticket.");
@@ -236,16 +229,7 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
     }
     
     if(books.length == 0){
-      setLiveTickets(true);
-      try {
-        const res = await fetch(`/api/book/${user?.uid}`);
-        const data = await res.json();
-        setBooks(data.reverse())
-      } catch {
-        setBooks([])
-      } finally {
-        setLiveTickets(false)
-      }
+      fetchTickets();
     }
   }
 
@@ -269,57 +253,11 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
           <X className="w-7 h-7 "/>
         </button>
       )}
-      {(isStopActive || ticketHistory) && (
+      {(isStopActive) && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-501" />
       )}
 
-      <div className={`fixed z-502 p-3 left-1/2 -translate-x-1/2 flex flex-col bottom-0 w-full max-w-[640px] h-1/2 ${ticketHistory?'translate-y-0':'translate-y-200'} transition-all duration-200 rounded-t-3xl bg-white`}>
-        <button
-          onClick={()=>setTicketHistory(false)}
-          className="absolute p-3 rounded-full bg-white cursor-pointer hover:bg-gray-100 -top-17 left-1/2 -translate-x-1/2"
-        >
-          <X className="w-7 h-7" />
-        </button>
-        <div className="text-2xl font-bold mx-auto mb-5">Ticket History</div>
-        <div className="flex-1 overflow-y-auto space-y-2">
-          {books.length>0 ? 
-            (books?.map((tick,indx)=>{
-              const isExpired = has24HoursPassed(tick.time.toString());
-              return(
-              <div key={indx} className={`rounded-lg border-2 border-blue-500 ${isExpired && 'opacity-50'} flex flex-col gap-4 p-4`}>
-                  <div className="flex flex-row justify-between">
-                      <div className="flex flex-row items-center gap-1">
-                        <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
-                            {tick.route}
-                        </div>
-                        x
-                        <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
-                          {tick.count} Ticket{tick.count>1?'s':''}
-                        </div>
-                      </div>
-                      <div 
-                          className="flex items-center justify-center h-8 bg-green-400 text-white rounded-lg font-bold py-1 px-2">
-                          ₹{tick.payment}
-                      </div>
-                  </div>
-                  <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
-                      <span>{tick.source}</span> 
-                      <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
-                      <span>{tick.destination}</span>
-                  </div>
-                  <div className="flex flex-row items-center justify-between">
-                    <div className="flex flex-row items-center gap-1">
-                      <span className="font-bold">Booked on:</span>
-                      {convertUTCtoIST(tick.time.toString())}
-                    </div>
-                    {isExpired && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
-                  </div>
-              </div>
-            )}))
-          :(liveTickets ? <div className="h-full flex items-center justify-center"><Loader2 className="text-black h-8 w-8 animate-spin"/></div>  : <div className="flex items-center justify-center h-full text-xl ">No Tickets to be Seen</div>)
-          }
-        </div>
-      </div>
+      {qrText && qrText?.length>0 && <QrCodeTicket qrText={qrText} setQrText={setQrText}/>}
 
       <div className={`fixed inset-0 bg-white z-502 flex items-center justify-center transition-all duration-200 ${checkout.active?'translate-y-0':'-translate-y-300'}`}>
         <div className={checkout.active ? "paySpin":''}>
@@ -495,39 +433,51 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                 :
                 <Loader2 className="text-black h-5 w-5 animate-spin"/>}
               </button>}
-              {books.length>0 &&
-                (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
-                  return(
-                  <div key={indx} className={`rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4`}>
-                      <div className="flex flex-row justify-between">
-                          <div className="flex flex-row items-center gap-1">
-                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
-                                {tick.route}
+              {books?.filter(prev => !has24HoursPassed(prev.time.toString())).length>0 &&
+                <>
+                  <div className="text-lg text-green-500 mx-auto font-bold">Your Live Tickets</div>
+                  {books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
+                    return(
+                    <div key={indx} className={`rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4`}>
+                        <div className="flex flex-row justify-between">
+                            <div className="flex flex-row items-center gap-1">
+                              <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                                  {tick.route}
+                              </div>
+                              x
+                              <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
+                                {tick.count} Ticket{tick.count>1?'s':''}
+                              </div>
                             </div>
-                            x
-                            <div className="flex items-center justify-center h-8 rounded-lg py-1 px-2 font-bold bg-blue-200">
-                              {tick.count} Ticket{tick.count>1?'s':''}
+                            <div 
+                                className="flex items-center justify-center h-8 bg-green-400 text-white rounded-lg font-bold py-1 px-2">
+                                ₹{tick.payment}
                             </div>
-                          </div>
-                          <div 
-                              className="flex items-center justify-center h-8 bg-green-400 text-white rounded-lg font-bold py-1 px-2">
-                              ₹{tick.payment}
-                          </div>
-                      </div>
-                      <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
-                          <span>{tick.source}</span> 
-                          <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
-                          <span>{tick.destination}</span>
-                      </div>
-                      <div className="flex flex-row items-center justify-between">
-                        <div className="flex flex-row items-center gap-1">
-                          <span className="font-bold">Booked on:</span>
-                          {convertUTCtoIST(tick.time.toString())}
                         </div>
-                        {has24HoursPassed(tick.time.toString()) && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
-                      </div>
-                  </div>
-                )}))}
+                        <div className="grid grid-cols-[40%_20%_40%] rounded-lg bg-blue-50 p-1 items-center justify-center text-center text-wrap text-lg">
+                            <span>{tick.source}</span> 
+                            <ArrowRight className="w-6 h-6 text-blue-500 justify-self-center-safe"/>
+                            <span>{tick.destination}</span>
+                        </div>
+                        <div className="flex flex-row items-center justify-between">
+                          <div className="flex flex-row items-center gap-1">
+                            <span className="font-bold">Booked on:</span>
+                            {convertUTCtoIST(tick.time.toString())}
+                          </div>
+                          <button onClick={()=>setQrText([{
+                              user: user?.displayName || 'Not Found',
+                              route: tick.route,
+                              source: tick.source,
+                              destination: tick.destination,
+                              booked: convertUTCtoIST(tick.time.toString())
+                          }])} className="p-2 gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer font-bold">
+                              <QrCode/>
+                          </button>
+                        </div>
+                    </div>
+                  )})}
+                </>
+              }
               <button onClick={()=>{setTicketHistory(true);TicketHistoryCheck()}} className="fixed bottom-0 left-0 right-0 bg-white h-12 border-t border-gray-300 text-lg font-bold">
                 Ticket History
               </button>
@@ -647,7 +597,6 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
               </button>}
               {books.length>0 &&
                 (books?.filter(prev => !has24HoursPassed(prev.time.toString())).map((tick,indx)=>{
-                  const isExpired = has24HoursPassed(tick.time.toString());
                   return(
                   <div key={indx} className={`rounded-lg border-2 border-blue-500 flex flex-col gap-4 p-4`}>
                       <div className="flex flex-row justify-between">
@@ -675,7 +624,15 @@ export const TicketSideBar = ({ openTicket, setOpenTicket }: Props) => {
                           <span className="font-bold">Booked on:</span>
                           {convertUTCtoIST(tick.time.toString())}
                         </div>
-                        {isExpired && <div className="py-1 px-2 rounded-lg bg-gray-300 font-bold">Expired</div>}
+                        <button onClick={()=>setQrText([{
+                            user: user?.displayName || 'Not Found',
+                            route: tick.route,
+                            source: tick.source,
+                            destination: tick.destination,
+                            booked: convertUTCtoIST(tick.time.toString())
+                        }])} className="p-2 gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer font-bold">
+                            <QrCode/>
+                        </button>
                       </div>
                   </div>
                 )}))}

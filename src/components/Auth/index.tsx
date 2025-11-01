@@ -9,7 +9,7 @@ import {
   signOut,
 } from 'firebase/auth';
 import { useAuth } from '@/context/userContext';
-import { Languages, LogIn, LogOut, TicketCheck } from 'lucide-react';
+import {Languages, LogIn, LogOut, TicketCheck} from 'lucide-react';
 
 interface props {
   setLangTheme: React.Dispatch<React.SetStateAction<boolean>>
@@ -22,7 +22,7 @@ interface propsAuth {
 }
 
 export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
-  const { user } = useAuth();
+  const { user, setTicketHistory, fetchTickets, books } = useAuth();
   const mobileRef = useRef<HTMLDivElement>(null)
   const desktopRef = useRef<HTMLDivElement>(null)
 
@@ -47,6 +47,18 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
     window.location.reload();
   };
 
+  const TicketHistoryCheck = () =>{
+    if(!user?.uid){
+      setAuthOpen(true)
+      return;
+    }
+    setTicketHistory(true)
+    
+    if(books.length == 0){
+      fetchTickets();
+    }
+  }
+
   return (
     <>
       <div
@@ -54,19 +66,19 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
       >
         <button
           onClick={() => setLangTheme(true)}
-          className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-1 flex flex-row gap-2 items-center"
+          className="bg-gray-50 cursor-pointer rounded-lg h-11 p-1 flex flex-row gap-2 items-center"
         >
           <Languages className="text-blue-600 w-5 h-5" />
           Language
         </button>
-        <button onClick={()=>setAuthOpen(false)} className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center">
+        <button onClick={TicketHistoryCheck} className="bg-gray-50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center">
           <TicketCheck className="text-green-400 w-5 h-5" />
           Ticket
         </button>
         {!user ? (
           <button
             onClick={() => setAuthOpen(true)}
-            className="bg-blue-50/50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center"
+            className="bg-gray-50 cursor-pointer rounded-lg h-11 p-2 w-full flex flex-row gap-2 items-center"
           >
             <LogIn className="text-blue-600 w-5 h-5" />
             Login
@@ -83,14 +95,18 @@ export const Dropdown = ({setLangTheme,setAuthOpen,setOpenDropUser}:props) => {
       </div>
 
       <div
-        className="absolute z-10 right-2 -bottom-[90px] bg-white flex max-[500px]:hidden drop-shadow-2xl flex-col items-center p-1 text-xl gap-1 text-nowrap rounded-xl"
+        className="absolute z-10 right-2 -bottom-[140px] w-[180px] bg-white flex max-[500px]:hidden drop-shadow-2xl flex-col items-center p-2 text-xl gap-1 text-nowrap rounded-xl"
       >
         <button
           onClick={() => setLangTheme(true)}
-          className="hover:bg-gray-100 cursor-pointer rounded-lg p-1 flex flex-row gap-1 items-center"
+          className="bg-white hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center"
         >
           <Languages className="text-blue-600 w-5 h-5" />
           Language
+        </button>
+        <button onClick={TicketHistoryCheck} className="bg-white hover:bg-gray-100 cursor-pointer rounded-lg p-1 w-full flex flex-row gap-1 items-center">
+          <TicketCheck className="text-green-400 w-5 h-5" />
+          Ticket
         </button>
         {!user ? (
           <button
