@@ -171,6 +171,7 @@ const AboutPage = () => {
           alt="gif"
           width={300}
           height={300}
+          className="max-[640px]:mx-auto"
         />
       </section>
 
