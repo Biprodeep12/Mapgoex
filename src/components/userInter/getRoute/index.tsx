@@ -1,7 +1,7 @@
 import { useMapContext } from "@/context/MapContext";
 import axios from "axios";
 import { CarFront, Footprints, Loader2 } from "lucide-react";
-import { SetStateAction, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const ROUTE_PROFILES = [
   { id: "foot-walking", label: "Walking", icon: Footprints },
@@ -14,17 +14,17 @@ interface props {
 }
 
 const GetRoute = ({openAi, setOpenAi}:props) => {
-  const { userLocation, setAnonRouteGeoJSON, anonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
+  const { sourceLocation, setAnonRouteGeoJSON, anonRouteGeoJSON, anonLocation, setMapCenter } = useMapContext();
   const [loading, setLoading] = useState(false);
   const [activeProfile, setActiveProfile] = useState<string>("");
-  const ContentRef = useRef<{ userLocation: [number, number]; anonLocation: [number, number];profile: string } | null>(null)
+  const ContentRef = useRef<{ sourceLocation: [number, number]; anonLocation: [number, number];profile: string } | null>(null)
 
   const fetchRoute = useCallback(
     async (profile: string) => {
-      if (!userLocation || !anonLocation) return;
-      if(JSON.stringify(ContentRef.current) === JSON.stringify({userLocation,anonLocation,profile})) return;
+      if (!sourceLocation || !anonLocation) return;
+      if(JSON.stringify(ContentRef.current) === JSON.stringify({sourceLocation,anonLocation,profile})) return;
 
-      ContentRef.current = {userLocation,anonLocation,profile};
+      ContentRef.current = {sourceLocation,anonLocation,profile};
 
       setLoading(true);
       setActiveProfile(profile);
@@ -32,7 +32,7 @@ const GetRoute = ({openAi, setOpenAi}:props) => {
       try {
         const res = await axios.post(
           `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
-          { coordinates: [userLocation, anonLocation] },
+          { coordinates: [sourceLocation, anonLocation] },
           {
             headers: {
               Authorization:
@@ -44,8 +44,8 @@ const GetRoute = ({openAi, setOpenAi}:props) => {
 
         setAnonRouteGeoJSON(res.data);        
 
-        const centerLng = (userLocation[0] + anonLocation[0]) / 2;
-        const centerLat = (userLocation[1] + anonLocation[1]) / 2;
+        const centerLng = (sourceLocation[0] + anonLocation[0]) / 2;
+        const centerLat = (sourceLocation[1] + anonLocation[1]) / 2;
 
         setMapCenter({
           center: [centerLng, centerLat],
@@ -57,7 +57,7 @@ const GetRoute = ({openAi, setOpenAi}:props) => {
         setLoading(false);
       }
     },
-    [userLocation, anonLocation]
+    [sourceLocation, anonLocation]
   );
 
   useEffect(() => {

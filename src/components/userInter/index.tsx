@@ -124,7 +124,9 @@ const UserInter = () => {
     selectedBusRouteInfo,
     setAnonRouteGeoJSON,
     setAnonLocation,
+    setSourceLocation,
     anonLocation,
+    sourceLocation
   } = useMapContext();
 
   const { subscribe, setRouteId, isConnected, busStopsETA, trackingBusStop, setTrackingBusStop } = useBusSimulator();
@@ -141,6 +143,7 @@ const UserInter = () => {
   const [openAi, setOpenAi] = useState(false);
   const [openLocation, setOpenLocation] = useState(false);
   const [openAvailableBuses, setOpenAvailableBuses] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   const [destinationData, setDestinationData] = useState<destinationType>({
     start: "",
@@ -157,38 +160,10 @@ const UserInter = () => {
     return `${minutes} min${minutes > 1 ? "s" : ""}`;
   }, []);
 
-  const handleGetLocation = useCallback(() => {
-    if (userLocation) {
-      setMapCenter({ center: userLocation, zoom: 15 });
-      return;
-    }
-
-    if (!("geolocation" in navigator)) {
-      alert("Geolocation is not supported by your browser.");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        setUserLocation(coords);
-        setMapCenter({ center: coords, zoom: 15 });
-      },
-      (err) => {
-        if (err.code === err.PERMISSION_DENIED) {
-          alert("Location permission denied. Please enable it in your browser.");
-        } else {
-          console.error("Geolocation error:", err);
-        }
-      }
-    );
-    setOpenLocation(false);
-  }, [userLocation, setUserLocation, setMapCenter]);
-
   const handleCloseDest = useCallback(() => {
     setDestinationData({ start: "", A: null, startActive: false, finish: "", B: null, finishActive: false });
     setAnonRouteGeoJSON(null);
-    setUserLocation(null);
+    setSourceLocation(null);
     setAnonLocation(null);
   }, [setAnonRouteGeoJSON, setUserLocation, setAnonLocation]);
 
@@ -206,15 +181,98 @@ const UserInter = () => {
     }));
   }, [trackingBusStop, selectedBusRouteInfo, destinationData.finish, setAnonRouteGeoJSON, setAnonLocation]);
 
-  const selectedDestinationClick = (dest:string,coords:[number,number]) => {
-    setDestinationData((prev) => ({
-      ...prev,
-      finish: dest,
-      B: coords,
-      startActive: true,
-      finishActive: true,
-    }));
-  }
+  const handleGetLocation = useCallback(async (): Promise<[number, number] | null> => {
+    setIsLocating(true)
+    return new Promise((resolve, reject) => {
+      if (!("geolocation" in navigator)) {
+        alert("Geolocation is not supported by your browser.");
+        reject("Geolocation not supported");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+          setUserLocation(coords);
+          setMapCenter({ center: coords, zoom: 15 });
+          setOpenLocation(false);
+          setIsLocating(false);
+          resolve(coords);
+        },
+        (err) => {
+          setIsLocating(false);
+          if (err.code === err.PERMISSION_DENIED) {
+            alert("Location permission denied. Please enable it in your browser.");
+          } else {
+            console.error("Geolocation error:", err);
+          }
+          reject(err);
+        }
+      );
+    });
+  }, [setUserLocation, setMapCenter]);
+
+  const selectedLocationClick = async (dest: string, coords: [number, number]) => {
+    if (coords[0] === 0 && coords[1] === 0) {
+      let location = userLocation;
+
+      if (!location) {
+        try {
+          location = await handleGetLocation();
+        } catch {
+          return;
+        }
+      }
+
+      if (!location) return;
+
+      if (destinationData.finishActive && !destinationData.startActive) {
+        setSourceLocation(location);
+        setMapCenter({ center: location, zoom: 15 });
+        setDestinationData((prev) => ({
+          ...prev,
+          start: "Your Location",
+          A: location,
+          startActive: true,
+          finishActive: true,
+        }));
+      } else {
+        setAnonLocation(location);
+        setMapCenter({ center: location, zoom: 15 });
+        setDestinationData((prev) => ({
+          ...prev,
+          finish: "Your Location",
+          B: location,
+          startActive: true,
+          finishActive: true,
+        }));
+      }
+
+      return;
+    }
+
+    if (destinationData.finishActive && !destinationData.startActive) {
+      setSourceLocation(coords);
+      setMapCenter({ center: coords, zoom: 15 });
+      setDestinationData((prev) => ({
+        ...prev,
+        start: dest,
+        A: coords,
+        startActive: true,
+        finishActive: true,
+      }));
+    } else {
+      setAnonLocation(coords);
+      setMapCenter({ center: coords, zoom: 15 });
+      setDestinationData((prev) => ({
+        ...prev,
+        finish: dest,
+        B: coords,
+        startActive: true,
+        finishActive: true,
+      }));
+    }
+  };
 
   const getCoordsFromLocationORS = useCallback(async () => {
     if (!searchInput.trim()) return;
@@ -285,10 +343,7 @@ const UserInter = () => {
 
   useEffect(() => {
     if (!localStorage.getItem("lang")) setLangTheme(true);
-  }, []);  
-
-  // const noResultsFound = useMemo(() => searchInput && busSearchResults.length === 0, [searchInput, busSearchResults]);
-
+  }, []);
  
   return (
     <>
@@ -359,9 +414,14 @@ const UserInter = () => {
                     <div className="flex flex-row gap-2 items-center">
                       <LocateFixed className="text-blue-600 w-6 h-6"/>
                       <input 
-                        value={destinationData.start}
-                        onChange={(e)=>setDestinationData(prev=> ({...prev,start:e.target.value}))}
+                        value={destinationData.start||searchInput}
+                        onChange={(e)=>{setDestinationData(prev=> ({...prev,start:e.target.value}));setSearchInput(e.target.value)}}
                         onFocus={()=>setDestinationData(prev=> ({...prev,startActive:false,finishActive:true}))}
+                        onKeyDown={(e) => {
+                          if(e.key=='Enter'){
+                            handleSearch();
+                          }
+                        }}
                         placeholder="Choose start location" 
                         className="flex-1 border-2 border-[#ccc] h-10 outline-none rounded-lg py-1 px-2"/>
                     </div>
@@ -370,9 +430,14 @@ const UserInter = () => {
                     <div className="flex flex-row gap-2 items-center">
                       <MapPin className="text-red-400 w-6 h-6"/>
                       <input
-                        value={destinationData.finish}
-                        onChange={(e)=>setDestinationData(prev=> ({...prev,finish:e.target.value}))}
-                        onFocus={()=>setDestinationData(prev=> ({...prev,finishActive:false,startActive:true}))} 
+                        value={destinationData.finish||searchInput}
+                        onChange={(e)=>{setDestinationData(prev=> ({...prev,finish:e.target.value}));setSearchInput(e.target.value)}}
+                        onFocus={()=>setDestinationData(prev=> ({...prev,finishActive:false,startActive:true}))}
+                        onKeyDown={(e) => {
+                          if(e.key=='Enter'){
+                            handleSearch();
+                          }
+                        }}
                         placeholder="Choose destination" 
                         className="flex-1 border-2 border-[#ccc] h-10 outline-none rounded-lg py-1 px-2"/>
                     </div>
@@ -382,22 +447,16 @@ const UserInter = () => {
                   <X className="h-6 w-6 shrink-0 text-gray-600"/>
                 </div>
               </div>
-              {destinationData.start!=='' && destinationData.finish!==''&& userLocation && anonLocation &&
+              {destinationData.start!=='' && destinationData.finish!==''&& sourceLocation && anonLocation &&
                 <GetRoute openAi={openAi} setOpenAi={setOpenAi}/>
               }
             </div>
             {((destinationData.finishActive&&!destinationData.startActive)||(destinationData.startActive&&!destinationData.finishActive)) &&
             <button onClick={()=>{
-              if(userLocation==null){
-                setOpenLocation(true);
-                setDestinationData(prev=> ({...prev,start:'Your Location',startActive:true,finishActive:true}));
-              } else {
-                handleGetLocation();
-                setDestinationData(prev=> ({...prev,start:'Your Location',startActive:true,finishActive:true}));
-              }
+              selectedLocationClick("",[0,0])
               }} className="bg-white text-xl gap-2 cursor-pointer flex items-center drop-shadow-2xl w-full rounded-2xl pl-4 py-3">
               <MapPinned className="text-blue-500 w-5 h-5"/>
-              Your Location
+              {isLocating ?<Loader2 className="text-2xl w-6 h-6 animate-spin mx-auto"/>:'Your Location'}
             </button>
             }</>}
             {selectedBus && busStopsETA && trackingBusStop.active && trackingBusStop.busStopID!==null &&
@@ -475,9 +534,7 @@ const UserInter = () => {
                   <button 
                     key={indx} 
                     onClick={()=>{
-                      setAnonLocation(search.coords);
-                      setMapCenter({center: search.coords,zoom: 15})
-                      selectedDestinationClick(search.label,search.coords)
+                      selectedLocationClick(search.label,search.coords)
                       setSearchInput('');
                     }}
                       className="text-left cursor-pointer py-1 px-2 hover:bg-gray-100 rounded-lg"

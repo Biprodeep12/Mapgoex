@@ -16,7 +16,7 @@ type step = {
 }
 
 export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
-    const { anonRouteGeoJSON,setAnonRouteGeoJSON, setUserLocation, setAnonLocation } = useMapContext()
+    const { anonRouteGeoJSON,setAnonRouteGeoJSON, setUserLocation, setAnonLocation, setSourceLocation } = useMapContext()
     const [screenHeight, setScreenHeight] = useState<number | null>(null);
 
     const steps = anonRouteGeoJSON?.features[0]?.properties?.segments[0]?.steps
@@ -36,8 +36,8 @@ export const DrawerDest = ({destinationData,setDestinationData}:Props) => {
     const handleCloseDest = () =>{
         setDestinationData({start:'',A:null,startActive:false,finish:'',B:null,finishActive:false});
         setAnonRouteGeoJSON(null);
-        setUserLocation(null);
         setAnonLocation(null);
+        setSourceLocation(null);
     }
 
     useEffect(() => {

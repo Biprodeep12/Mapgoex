@@ -96,6 +96,11 @@ export default function MainMap() {
           <div className="w-4.5 h-4.5 border-4 border-blue-500 bg-white rounded-full"></div>
         </Marker>
       )}
+      {userLocation && (
+        <Popup longitude={userLocation[0]} latitude={userLocation[1]} anchor="top">
+          Your Location
+        </Popup>
+      )}
 
       {sourceLocation && (
         <Marker longitude={sourceLocation[0]} latitude={sourceLocation[1]} anchor="bottom">
