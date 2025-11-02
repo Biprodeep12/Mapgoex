@@ -1,8 +1,11 @@
-import { MapPin, Zap, Ticket, Star, Lightbulb, Globe, Github, Linkedin, Instagram } from "lucide-react"
+import Langhuh from "@/components/Langhuh"
+import { MapPin, Zap, Ticket, Star, Lightbulb, Globe, Github, Linkedin, Instagram, Languages } from "lucide-react"
 import Head from "next/head"
 import Image from "next/image"
+import { useState } from "react"
 
 const AboutPage = () => {
+  const [langTheme, setLangTheme] = useState(false);
   const features = [
     {
       icon: MapPin,
@@ -51,12 +54,57 @@ const AboutPage = () => {
   return (
     <>
     <Head>
+      <title>MapGeox | About</title>
+
       {features.map((f, i) => (
         <link key={i} rel="preload" as="image" href={f.image} />
       ))}
+
       <link rel="preload" as="image" href="/huh.png" />
+
+      <meta 
+        name="description" 
+        content="Learn more about MapGeox — a smart bus and route mapping platform built with Next.js, MapLibre, and OpenStreetMap. Discover our mission to simplify public transport navigation with real-time tracking and intelligent routing." 
+      />
+      <meta 
+        name="keywords" 
+        content="MapGeox, about MapGeox, transport mapping, bus routes, real-time bus tracking, route planning, OpenStreetMap, MapLibre, OpenRouteService" 
+      />
+      <meta 
+        name="author" 
+        content="MapGeox Team" 
+      />
+
+      <meta 
+        property="og:title" 
+        content="About MapGeox | Smart Bus & Route Mapping Platform" 
+      />
+      <meta 
+        property="og:description" 
+        content="Discover how MapGeox helps you explore bus routes, track live locations, and plan your journey efficiently." 
+      />
+      <meta 
+        property="og:image" 
+        content="/logo.svg" 
+      />
+      <meta 
+        property="og:url" 
+        content="https://mapgeox.vercel.app/Info" 
+      />
+      <meta 
+        property="og:type" 
+        content="website" 
+      />
+
+      <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     </Head>
     <main className="min-h-screen bg-white text-gray-900">
+      <Langhuh setLangTheme={setLangTheme} langTheme={langTheme}/>
+      
+      <button onClick={()=>setLangTheme(true)} className="absolute cursor-pointer top-5 right-5 rounded-full p-2 bg-blue-500 hover:bg-blue-600">
+        <Languages className="text-white"/>
+      </button>
+
       <section className="w-full py-20 px-4 sm:py-32 bg-blue-400 text-white">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-balance text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">About MapGoex</h1>
