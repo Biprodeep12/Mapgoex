@@ -310,8 +310,12 @@ const UserInter = () => {
     getCoordsFromLocationORS();
   }, [searchInput, getCoordsFromLocationORS]);
 
-  const handleBusClick = useCallback(
+  const handleBusClick = useCallback(  
     async (bus: busDataType) => {
+      if(!user){
+        setAuthOpen(true);
+        return;
+      }
       setSelectedBus(bus);
       setLoadingRoute(true);
       setRouteId(bus.id);

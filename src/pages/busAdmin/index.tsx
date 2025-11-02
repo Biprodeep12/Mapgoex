@@ -1,5 +1,7 @@
+"use client"
+
 import { useBusSimulator } from "@/context/BusSimulatorContext"
-import { Bus, Play, Terminal } from "lucide-react"
+import { Bus, Play, Terminal, AlertCircle, Info } from "lucide-react"
 
 const buses = [{ id: "A15" }, { id: "B22" }]
 
@@ -24,6 +26,41 @@ const BusAdmin = () => {
             </div>
             <div className="text-gray-600 text-sm">
               Select a bus to start simulation and monitor real-time operations
+            </div>
+          </div>
+
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-semibold text-amber-900 mb-1">Wait for Server Connection</div>
+              <div className="text-sm text-amber-800">
+                Before starting a simulation, ensure the logs show{" "}
+                <span className="font-mono bg-amber-100 px-2 py-0.5 rounded">&quot;Server is Connected&quot;</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
+            <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="font-semibold text-blue-900 mb-2">Starting a Bus Simulation</div>
+              <div className="text-sm text-blue-800 space-y-1">
+                <div>
+                  Click the &quot;Start Simulation&quot; button <span className="font-semibold">twice</span> to start a bus. Watch
+                  for these messages:
+                </div>
+                <div className="ml-4 mt-2 space-y-1 font-mono text-sm">
+                  <div>
+                    <span className="text-green-600">First:</span> Auto-subscribed to route XX
+                  </div>
+                  <div>
+                    <span className="text-green-600">Second:</span> Requested simulation start for XX
+                  </div>
+                  <div>
+                    <span className="text-green-600">Wait:</span> Simulation started for route XX
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
