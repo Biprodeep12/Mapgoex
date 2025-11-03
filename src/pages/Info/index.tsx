@@ -1,5 +1,5 @@
 import Langhuh from "@/components/Langhuh"
-import { MapPin, Zap, Ticket, Star, Lightbulb, Globe, Github, Linkedin, Instagram, Languages } from "lucide-react"
+import { MapPin, Zap, Ticket, Star, Lightbulb, Globe, Github, Linkedin, Instagram, Languages, ArrowRight } from "lucide-react"
 import Head from "next/head"
 import Image from "next/image"
 import { useState } from "react"
@@ -108,9 +108,12 @@ const AboutPage = () => {
       <section className="w-full py-20 px-4 sm:py-32 bg-blue-400 text-white">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-balance text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">About MapGoex</h1>
-          <p className="text-lg sm:text-xl max-w-2xl leading-relaxed">
+          <div className="text-lg sm:text-xl max-w-2xl leading-relaxed flex flex-row items-center gap-2">
             Smart Bus Tracking & Routing Platform
-          </p>
+            <button onClick={()=>window.location.href="/"} className="rounded-full p-2 shadow-2xl hover:bg-blue-500 cursor-pointer">
+              <ArrowRight/>
+            </button>
+          </div>
         </div>
       </section>
 
