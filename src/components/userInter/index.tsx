@@ -312,10 +312,6 @@ const UserInter = () => {
 
   const handleBusClick = useCallback(  
     async (bus: busDataType) => {
-      if(!user?.uid){
-        setAuthOpen(true);
-        return;
-      }
       setSelectedBus(bus);
       setLoadingRoute(true);
       setRouteId(bus.id);
