@@ -312,7 +312,7 @@ const UserInter = () => {
 
   const handleBusClick = useCallback(  
     async (bus: busDataType) => {
-      if(!user){
+      if(!user?.uid){
         setAuthOpen(true);
         return;
       }

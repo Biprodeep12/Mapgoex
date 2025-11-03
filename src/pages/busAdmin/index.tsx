@@ -1,5 +1,3 @@
-"use client"
-
 import { useBusSimulator } from "@/context/BusSimulatorContext"
 import { Bus, Play, Terminal, AlertCircle, Info } from "lucide-react"
 
