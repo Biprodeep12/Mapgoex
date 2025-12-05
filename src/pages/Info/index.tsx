@@ -139,6 +139,19 @@ const AboutPage = () => {
         </div>
       </section>
 
+      <section className="w-full max-w-[850px] h-[500px] max-[500px]:h-[300px] mx-auto pt-16 px-4 sm:pt-20">
+        <iframe 
+          width="100%"
+          height="100%"
+          src="https://www.youtube.com/embed/azR8MX9cOQY" 
+          title="MapGeox - Smart Bus &amp; Route Mapping Platform"
+          frameBorder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          referrerPolicy="strict-origin-when-cross-origin" 
+          allowFullScreen
+          />
+      </section>
+
       <section className="w-full pt-16 px-4 sm:pt-20">
         <div className="max-w-5xl mx-auto">
           <div className="mb-12">
