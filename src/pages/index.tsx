@@ -37,6 +37,7 @@ export default function Home() {
         content="https://mapgeox.vercel.app/" 
       />
       <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+      <meta http-equiv="X-Content-Security-Policy" content="allow-http"/>
     </Head>
     <div>
       <MainMap/>
