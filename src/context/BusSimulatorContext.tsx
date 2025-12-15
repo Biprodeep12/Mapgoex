@@ -69,7 +69,7 @@ export const BusSimulatorProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const socket = io("http://43.204.147.37/");
+    const socket = io("43.204.147.37"); 
     socketRef.current = socket;
 
     socket.on("connect", () => {
