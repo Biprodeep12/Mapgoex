@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { connectToDatabase } from '@/utils/mongodb';
 import BusRouteInfoModel from '@/models/busRouteInfo';
+import { client } from '@/utils/db';
+
+const CACHE_TTL = 3600;
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,8 +15,16 @@ export default async function handler(
 
   try {
     if (typeof route === 'string') {
+      const cacheKey = `bus:${route}`;
+
+      const cachedData = await client.get(cacheKey);
+      if (cachedData) {
+        return res.status(200).json(JSON.parse(cachedData));
+      }
+
       const busInfo = await BusRouteInfoModel.findOne({ Route: route }).lean();
       if (busInfo) {
+        await client.setEx(cacheKey, CACHE_TTL, JSON.stringify(busInfo));
         return res.status(200).json(busInfo);
       } else {
         return res.status(404).json({ error: 'Route not found' });

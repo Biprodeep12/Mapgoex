@@ -72,11 +72,10 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
     setUserLocation(null);
     try {
       const res = await axios.post(
-        "https://api.openrouteservice.org/v2/directions/driving-car/geojson",
+        "/api/route",
         { coordinates: [start, end] },
         {
           headers: {
-            Authorization: "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjczZGM4NTFmMDVkOTRiOTRhNzFmNTBlMmRhODI0OThhIiwiaCI6Im11cm11cjY0In0=",
             "Content-Type": "application/json",
           },
         }
