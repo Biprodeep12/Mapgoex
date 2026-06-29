@@ -1,8 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
-import { client } from '@/utils/db';
-
-const CACHE_TTL = 3600;
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,14 +16,6 @@ export default async function handler(
       return res.status(400).json({ error: 'Invalid coordinates' });
     }
 
-    const [start, end] = coordinates;
-    const cacheKey = `route:${start[0]},${start[1]}:${end[0]},${end[1]}`;
-
-    const cachedData = await client.get(cacheKey);
-    if (cachedData) {
-      return res.status(200).json(JSON.parse(cachedData));
-    }
-
     const response = await axios.post(
       'https://api.openrouteservice.org/v2/directions/driving-car/geojson',
       { coordinates },
@@ -37,8 +26,6 @@ export default async function handler(
         },
       }
     );
-
-    await client.setEx(cacheKey, CACHE_TTL, JSON.stringify(response.data));
 
     return res.status(200).json(response.data);
   } catch (error) {
